@@ -164,6 +164,49 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     return user
 
 
+@app.get("/auth/confirm")
+def confirm_account(token: str, db: Session = Depends(get_db)):
+    confirmation_token = db.scalar(
+        select(ConfirmationToken).where(
+            ConfirmationToken.token == token,
+            ConfirmationToken.type == "CONFIRMACAO_CADASTRO",
+        )
+    )
+
+    if confirmation_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token de confirmação inválido.",
+        )
+
+    if confirmation_token.used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este token de confirmação já foi utilizado.",
+        )
+
+    if confirmation_token.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O token de confirmação expirou.",
+        )
+
+    user = db.get(User, confirmation_token.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado.",
+        )
+
+    user.status = "ATIVO"
+    confirmation_token.used = True
+
+    db.commit()
+
+    return {"message": "Conta confirmada com sucesso."}
+
+
 @app.post("/auth/login", response_model=LoginResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == payload.email))
