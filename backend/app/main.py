@@ -1,6 +1,6 @@
 import secrets
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -19,7 +19,7 @@ from .auth import (
     revoke_token,
     verify_password,
 )
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, ensure_user_confirmed_at_column
 from .models import ConfirmationToken, User
 from .schemas import (
     HealthResponse,
@@ -67,6 +67,7 @@ def password_is_strong(password: str) -> bool:
 async def lifespan(app: FastAPI):
     SESSIONS.clear()
     Base.metadata.create_all(bind=engine)
+    ensure_user_confirmed_at_column()
     seed_demo_user()
 
     yield
@@ -161,7 +162,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.add(confirmation_token)
 
     send_confirmation_email(email, confirmation_token.token)
-    
+
     db.commit()
     db.refresh(user)
 
@@ -204,6 +205,7 @@ def confirm_account(token: str, db: Session = Depends(get_db)):
         )
 
     user.status = "ATIVO"
+    user.confirmed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     confirmation_token.used = True
 
     db.commit()

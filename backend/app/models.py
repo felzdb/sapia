@@ -16,6 +16,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(30), nullable=False, default="USUARIO")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ATIVO")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class ConfirmationToken(Base):
@@ -35,4 +36,3 @@ class ConfirmationToken(Base):
         ForeignKey("usuario.id"),
         nullable=False,
     )
-    
