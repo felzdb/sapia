@@ -1,4 +1,7 @@
+import secrets
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +19,7 @@ from .auth import (
     verify_password,
 )
 from .database import Base, SessionLocal, engine
-from .models import User
+from .models import ConfirmationToken, User
 from .schemas import (
     HealthResponse,
     LoginRequest,
@@ -144,6 +147,17 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     )
 
     db.add(user)
+    db.flush()
+
+    confirmation_token = ConfirmationToken(
+        token=secrets.token_urlsafe(32),
+        type="CONFIRMACAO_CADASTRO",
+        expires_at=datetime.utcnow() + timedelta(hours=24),
+        used=False,
+        user_id=user.id,
+    )
+
+    db.add(confirmation_token)
     db.commit()
     db.refresh(user)
 
