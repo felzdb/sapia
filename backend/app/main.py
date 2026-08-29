@@ -15,7 +15,7 @@ from .auth import (
     revoke_token,
     verify_password,
 )
-from .database import Base, SessionLocal, engine, reset_database_file
+from .database import Base, SessionLocal, engine
 from .models import User
 from .schemas import HealthResponse, LoginRequest, LoginResponse, UserResponse
 
@@ -46,7 +46,6 @@ def seed_demo_user() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SESSIONS.clear()
-    reset_database_file()
     Base.metadata.create_all(bind=engine)
     seed_demo_user()
 
