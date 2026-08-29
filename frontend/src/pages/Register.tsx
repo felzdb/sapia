@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import {
+    ArrowLeft,
     ArrowRight,
     FileText,
     Scale,
@@ -7,37 +8,44 @@ import {
     Sparkles,
 } from "lucide-react";
 
-import { login, type User } from "../api";
+import { register } from "../api";
 
-type LoginProps = {
-    onAuthenticated: (user: User, token: string) => void;
-    onRegister: () => void;
+type RegisterProps = {
+    onBackToLogin: () => void;
 };
 
-export default function Login({ onAuthenticated, onRegister }: LoginProps) {
-    const [email, setEmail] = useState("admin@sapia.com");
-    const [password, setPassword] = useState("Sapia@123");
+export default function Register({ onBackToLogin }: RegisterProps) {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [passwordConfirmation, setPasswordConfirmation] = useState("");
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
 
         setError("");
+        setSuccess("");
         setLoading(true);
 
         try {
-            const result = await login(email, password);
+            await register(
+                name,
+                email,
+                password,
+                passwordConfirmation
+            );
 
-            onAuthenticated(
-                result.user,
-                result.access_token
+            setSuccess(
+                "Cadastro realizado. Verifique seu e-mail para confirmar sua conta."
             );
         } catch (err) {
             setError(
                 err instanceof Error
                     ? err.message
-                    : "Falha ao autenticar."
+                    : "Falha ao realizar cadastro."
             );
         } finally {
             setLoading(false);
@@ -51,18 +59,25 @@ export default function Login({ onAuthenticated, onRegister }: LoginProps) {
                     <div className="brand-icon">
                         <Scale size={30} />
                     </div>
+
                     <div>
                         <span className="brand-name">SAPIA</span>
-                        <span className="brand-subtitle">Tecnologia aplicada ao jurídico</span>
+                        <span className="brand-subtitle">
+                            Tecnologia aplicada ao jurídico
+                        </span>
                     </div>
                 </div>
 
                 <div className="hero-copy">
                     <span className="eyebrow">Protótipo funcional</span>
-                    <h1>Automação inteligente para petições previdenciárias.</h1>
+
+                    <h1>
+                        Automação inteligente para petições previdenciárias.
+                    </h1>
+
                     <p>
-                        Centralize o envio do documento, a leitura automatizada e a geração
-                        da petição inicial em um único fluxo.
+                        Centralize o envio do documento, a leitura automatizada
+                        e a geração da petição inicial em um único fluxo.
                     </p>
                 </div>
 
@@ -71,10 +86,12 @@ export default function Login({ onAuthenticated, onRegister }: LoginProps) {
                         <Sparkles size={20} />
                         <span>Extração assistida por IA</span>
                     </div>
+
                     <div className="feature-row">
                         <ShieldCheck size={20} />
                         <span>Conferência antes da geração</span>
                     </div>
+
                     <div className="feature-row">
                         <FileText size={20} />
                         <span>Exportação estruturada de documentos</span>
@@ -91,13 +108,28 @@ export default function Login({ onAuthenticated, onRegister }: LoginProps) {
                     <div className="login-heading">
                         <span className="status-pill">
                             <span className="status-dot" />
-                            Ambiente demonstrativo
+                            Novo usuário
                         </span>
-                        <h2>Acesse o SAPIA</h2>
-                        <p>Utilize as credenciais demonstrativas para entrar no sistema.</p>
+
+                        <h2>Crie sua conta</h2>
+
+                        <p>
+                            Preencha seus dados para acessar o SAPIA.
+                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit}>
+                        <label>
+                            Nome completo
+                            <input
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
+                                type="text"
+                                autoComplete="name"
+                                required
+                            />
+                        </label>
+
                         <label>
                             E-mail
                             <input
@@ -115,31 +147,50 @@ export default function Login({ onAuthenticated, onRegister }: LoginProps) {
                                 value={password}
                                 onChange={(event) => setPassword(event.target.value)}
                                 type="password"
-                                autoComplete="current-password"
+                                autoComplete="new-password"
+                                required
+                            />
+                        </label>
+
+                        <label>
+                            Repita a senha
+                            <input
+                                value={passwordConfirmation}
+                                onChange={(event) =>
+                                    setPasswordConfirmation(event.target.value)
+                                }
+                                type="password"
+                                autoComplete="new-password"
                                 required
                             />
                         </label>
 
                         {error && <div className="error-box">{error}</div>}
 
-                        <button className="primary-button" type="submit" disabled={loading}>
-                            {loading ? "Entrando..." : "Entrar"}
-                            {!loading && <ArrowRight size={18} />}
+                        {success && (
+                            <div className="demo-credentials">
+                                {success}
+                            </div>
+                        )}
+
+                        <button
+                            className="primary-button"
+                            type="submit"
+                            disabled={loading || Boolean(success)}
+                        >
+                            {loading ? "Cadastrando..." : "Cadastrar"}
+                            {!loading && !success && <ArrowRight size={18} />}
+                        </button>
+
+                        <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={onBackToLogin}
+                        >
+                            <ArrowLeft size={16} />
+                            Voltar para o login
                         </button>
                     </form>
-
-                    <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={onRegister}
-                    >
-                        Criar uma conta
-                    </button>
-
-                    <div className="demo-credentials">
-                        <strong>Credenciais do protótipo</strong>
-                        <span>admin@sapia.com · Sapia@123</span>
-                    </div>
                 </div>
             </section>
         </main>
