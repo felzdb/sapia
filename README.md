@@ -9,6 +9,39 @@ Primeira versão funcional do protótipo do SAPIA, focada em:
 - Sessão por token mantida em memória;
 - Tela inicial do sistema com área de upload ainda não conectada ao processamento de documentos.
 
+## Rodando o projeto pela primeira vez
+
+Abaixo deixo a listagem de comandos que uso para inicialização do projeto no MacOS, talvez seja necessário adaptar algo se estiver rodando no Windows:
+
+Frontend:
+cd frontend
+npm install
+npm run dev
+
+Backend:
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+O Frontend e o Backend devem permanecer rodando simultaneamente, utilize dois terminais.
+
+## Preciso rodar todos esses comandos sempre?
+
+Não. A criação do ambiente virtual e a instalação das dependências são
+necessárias apenas na primeira execução ou quando as dependências do projeto
+forem alteradas.
+
+Frontend:
+cd frontend
+npm run dev
+
+Backend:
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+
 ## Credenciais de demonstração
 
 - E-mail: `admin@sapia.com`
