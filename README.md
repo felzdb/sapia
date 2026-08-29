@@ -14,16 +14,18 @@ Primeira versão funcional do protótipo do SAPIA, focada em:
 Abaixo deixo a listagem de comandos que uso para inicialização do projeto no MacOS, talvez seja necessário adaptar algo se estiver rodando no Windows:
 
 Frontend:
-cd frontend
-npm install
-npm run dev
+
+- cd frontend
+- npm install
+- npm run dev
 
 Backend:
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+
+- cd backend
+- python3 -m venv .venv
+- source .venv/bin/activate
+- pip install -r requirements.txt
+- uvicorn app.main:app --reload --port 8000
 
 O Frontend e o Backend devem permanecer rodando simultaneamente, utilize dois terminais.
 
@@ -34,13 +36,15 @@ necessárias apenas na primeira execução ou quando as dependências do projeto
 forem alteradas.
 
 Frontend:
-cd frontend
-npm run dev
+
+- cd frontend
+- npm run dev
 
 Backend:
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+
+- cd backend
+- source .venv/bin/activate
+- uvicorn app.main:app --reload --port 8000
 
 ## Credenciais de demonstração
 
