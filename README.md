@@ -61,6 +61,13 @@ sapia-prototype/
 │   └── requirements.txt
 └── frontend/
     ├── src/
+    │   ├── pages/
+    │   │   │── Login.tsx
+    │   │   └── Home.tsx
+    │   │
+    │   │── components/
+    │   │   └── Sidebar.tsx
+    │   │
     │   ├── api.ts
     │   ├── App.tsx
     │   ├── index.css
