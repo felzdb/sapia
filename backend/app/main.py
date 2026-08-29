@@ -17,7 +17,13 @@ from .auth import (
 )
 from .database import Base, SessionLocal, engine
 from .models import User
-from .schemas import HealthResponse, LoginRequest, LoginResponse, UserResponse
+from .schemas import (
+    HealthResponse,
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    UserResponse,
+)
 
 
 DEMO_EMAIL = "admin@sapia.com"
@@ -41,6 +47,16 @@ def seed_demo_user() -> None:
 
         db.add(user)
         db.commit()
+
+
+def password_is_strong(password: str) -> bool:
+    return (
+        len(password) >= 8
+        and any(char.isupper() for char in password)
+        and any(char.islower() for char in password)
+        and any(char.isdigit() for char in password)
+        and any(not char.isalnum() for char in password)
+    )
 
 
 @asynccontextmanager
@@ -79,6 +95,59 @@ def health():
         "status": "ok",
         "service": "SAPIA API",
     }
+
+
+@app.post(
+    "/auth/register",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    name = payload.name.strip()
+    email = str(payload.email).lower()
+
+    if len(name) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O nome completo deve ter entre 3 e 100 caracteres.",
+        )
+
+    if payload.password != payload.password_confirmation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="As senhas informadas não coincidem.",
+        )
+
+    if not password_is_strong(payload.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "A senha deve ter no mínimo 8 caracteres, incluindo "
+                "letra maiúscula, minúscula, número e caractere especial."
+            ),
+        )
+
+    existing_user = db.scalar(select(User).where(User.email == email))
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este e-mail já está cadastrado.",
+        )
+
+    user = User(
+        name=name,
+        email=email,
+        password_hash=hash_password(payload.password),
+        role="USUARIO",
+        status="PENDENTE",
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return user
 
 
 @app.post("/auth/login", response_model=LoginResponse)
