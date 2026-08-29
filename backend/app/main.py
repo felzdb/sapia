@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from .email_service import send_confirmation_email
 
 from .auth import (
     SESSIONS,
@@ -158,6 +159,9 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     )
 
     db.add(confirmation_token)
+
+    send_confirmation_email(email, confirmation_token.token)
+    
     db.commit()
     db.refresh(user)
 
