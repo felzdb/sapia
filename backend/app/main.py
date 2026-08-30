@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from .email_service import send_confirmation_email
+from .email_service import FRONTEND_URL, send_confirmation_email
 
 from .auth import (
     SESSIONS,
@@ -299,13 +299,13 @@ def confirm_account(token: str, db: Session = Depends(get_db)):
                     Agora você já pode acessar o sistema com seu e-mail e senha.
                 </p>
 
-                <a href="http://localhost:5173">
+                <a href="__FRONTEND_URL__">
                     Ir para o SAPIA
                 </a>
             </main>
         </body>
         </html>
-        """,
+        """.replace("__FRONTEND_URL__", FRONTEND_URL),
         status_code=200,
     )
 
