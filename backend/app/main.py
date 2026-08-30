@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .email_service import send_confirmation_email
@@ -210,7 +211,103 @@ def confirm_account(token: str, db: Session = Depends(get_db)):
 
     db.commit()
 
-    return {"message": "Conta confirmada com sucesso."}
+    return HTMLResponse(
+        content="""
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Conta confirmada - SAPIA</title>
+            <style>
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 24px;
+                    font-family: Arial, sans-serif;
+                    background: #f5f7fb;
+                    color: #172033;
+                }
+
+                .card {
+                    width: 100%;
+                    max-width: 480px;
+                    padding: 40px;
+                    background: white;
+                    border: 1px solid #ddd;
+                    border-radius: 12px;
+                    text-align: center;
+                }
+
+                .logo {
+                    width: 58px;
+                    height: 58px;
+                    margin: 0 auto 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 10px;
+                    background: #263b77;
+                    color: white;
+                    font-size: 25px;
+                    font-weight: bold;
+                }
+
+                h1 {
+                    margin: 0 0 12px;
+                    font-size: 26px;
+                }
+
+                p {
+                    margin: 0 0 28px;
+                    color: #697287;
+                    line-height: 1.5;
+                }
+
+                a {
+                    display: block;
+                    width: 100%;
+                    padding: 13px;
+                    border-radius: 6px;
+                    background: #263b77;
+                    color: white;
+                    text-decoration: none;
+                    font-weight: bold;
+                }
+
+                a:hover {
+                    background: #1f3267;
+                }
+            </style>
+        </head>
+
+        <body>
+            <main class="card">
+                <div class="logo">S</div>
+
+                <h1>Conta confirmada com sucesso!</h1>
+
+                <p>
+                    Seu cadastro no SAPIA foi ativado.
+                    Agora você já pode acessar o sistema com seu e-mail e senha.
+                </p>
+
+                <a href="http://localhost:5173">
+                    Ir para o SAPIA
+                </a>
+            </main>
+        </body>
+        </html>
+        """,
+        status_code=200,
+    )
 
 
 @app.post("/auth/login", response_model=LoginResponse)
@@ -226,7 +323,10 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if user.status != "ATIVO":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuário sem permissão de acesso.",
+            detail=(
+                "Sua conta ainda não foi confirmada. "
+                "Verifique seu e-mail e confirme o cadastro antes de entrar."
+            ),
         )
 
     token = create_access_token(user.id)

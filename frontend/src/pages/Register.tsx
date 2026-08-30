@@ -118,7 +118,7 @@ export default function Register({ onBackToLogin }: RegisterProps) {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} noValidate>
                         <label>
                             Nome completo
                             <input
