@@ -24,6 +24,20 @@ class Base(DeclarativeBase):
     pass
 
 
+def ensure_user_confirmed_at_column() -> None:
+    with engine.begin() as connection:
+        columns = connection.exec_driver_sql(
+            "PRAGMA table_info(usuario)"
+        ).fetchall()
+
+        column_names = {column[1] for column in columns}
+
+        if "confirmed_at" not in column_names:
+            connection.exec_driver_sql(
+                "ALTER TABLE usuario ADD COLUMN confirmed_at DATETIME"
+            )
+
+
 def reset_database_file() -> None:
     engine.dispose()
 

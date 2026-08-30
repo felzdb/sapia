@@ -11,9 +11,10 @@ import { login, type User } from "../api";
 
 type LoginProps = {
     onAuthenticated: (user: User, token: string) => void;
+    onRegister: () => void;
 };
 
-export default function Login({ onAuthenticated }: LoginProps) {
+export default function Login({ onAuthenticated, onRegister }: LoginProps) {
     const [email, setEmail] = useState("admin@sapia.com");
     const [password, setPassword] = useState("Sapia@123");
     const [error, setError] = useState("");
@@ -126,6 +127,14 @@ export default function Login({ onAuthenticated }: LoginProps) {
                             {!loading && <ArrowRight size={18} />}
                         </button>
                     </form>
+
+                    <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={onRegister}
+                    >
+                        Criar uma conta
+                    </button>
 
                     <div className="demo-credentials">
                         <strong>Credenciais do protótipo</strong>

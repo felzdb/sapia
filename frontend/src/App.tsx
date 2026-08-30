@@ -4,11 +4,13 @@ import { Scale } from "lucide-react";
 import { getMe, type User } from "./api";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import Register from "./pages/Register";
 
 const TOKEN_KEY = "sapia_token";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [authPage, setAuthPage] = useState<"login" | "register">("login");
 
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem(TOKEN_KEY)
@@ -44,6 +46,14 @@ export default function App() {
   }
 
   if (!user || !token) {
+    if (authPage === "register") {
+      return (
+        <Register
+          onBackToLogin={() => setAuthPage("login")}
+        />
+      );
+    }
+
     return (
       <Login
         onAuthenticated={(user, token) => {
@@ -51,9 +61,10 @@ export default function App() {
           setToken(token);
           setUser(user);
         }}
+        onRegister={() => setAuthPage("register")}
       />
     );
-  }
+}
 
   return (
     <Home
