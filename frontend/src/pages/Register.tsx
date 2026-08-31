@@ -28,6 +28,19 @@ export default function Register({ onBackToLogin }: RegisterProps) {
 
         setError("");
         setSuccess("");
+
+        if (
+            !name.trim() ||
+            !email.trim() ||
+            !password ||
+            !passwordConfirmation
+        ) {
+            setError(
+                "Campos obrigatórios não preenchidos. Verifique os dados e tente novamente."
+            );
+            return;
+        }
+
         setLoading(true);
 
         try {
