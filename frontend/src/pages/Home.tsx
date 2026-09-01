@@ -10,6 +10,7 @@ import {
 
 import { logout, type User } from "../api";
 import Sidebar from "../components/Sidebar";
+import UploadArea from "../components/UploadArea";
 
 type HomeProps = {
     user: User;
@@ -90,13 +91,7 @@ export default function Home({
                         </div>
                     </div>
 
-                    <button className="dropzone" type="button">
-                        <div className="dropzone-icon">
-                            <UploadCloud size={30} />
-                        </div>
-                        <strong>Arraste o PDF aqui ou clique para selecionar</strong>
-                        <span>PDF de até 20 MB</span>
-                    </button>
+                    <UploadArea token={token} />
 
                     <div className="flow-steps">
                         <div className="flow-step active">
