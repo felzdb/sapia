@@ -38,7 +38,7 @@ def ensure_user_confirmed_at_column() -> None:
             )
 
 
-def reset_database_file() -> None:
+def reset_database_file():
     engine.dispose()
 
     if DB_PATH.exists():

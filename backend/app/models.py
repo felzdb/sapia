@@ -36,3 +36,49 @@ class ConfirmationToken(Base):
         ForeignKey("usuario.id"),
         nullable=False,
     )
+
+class Document(Base):
+    __tablename__ = "documento"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("usuario.id"),
+        nullable=False
+    )
+
+    original_filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    stored_filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    storage_path: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False
+    )
+
+    size_bytes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="ENVIADO",
+        nullable=False
+    )
+
+    uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )

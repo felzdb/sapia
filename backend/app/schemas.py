@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
+from datetime import datetime
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -32,3 +32,10 @@ class LoginResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+
+class DocumentResponse(BaseModel):
+    id: int
+    original_filename: str
+    size_bytes: int
+    status: str
+    uploaded_at: datetime

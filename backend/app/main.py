@@ -11,6 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .email_service import FRONTEND_URL, send_confirmation_email
 
+from .storage import reset_temp_storage
+from .documents import router as documents_router
+
 from .auth import (
     SESSIONS,
     create_access_token,
@@ -21,7 +24,7 @@ from .auth import (
     revoke_token,
     verify_password,
 )
-from .database import Base, SessionLocal, engine, ensure_user_confirmed_at_column
+from .database import (Base, SessionLocal, engine, ensure_user_confirmed_at_column, reset_database_file)
 from .models import ConfirmationToken, User
 from .schemas import (
     HealthResponse,
@@ -68,6 +71,8 @@ def password_is_strong(password: str) -> bool:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SESSIONS.clear()
+    reset_database_file()
+    reset_temp_storage()
     Base.metadata.create_all(bind=engine)
     ensure_user_confirmed_at_column()
     seed_demo_user()
@@ -75,6 +80,7 @@ async def lifespan(app: FastAPI):
     yield
 
     SESSIONS.clear()
+    reset_temp_storage()
 
 
 app = FastAPI(
@@ -94,6 +100,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(documents_router)
 
 
 @app.get("/health", response_model=HealthResponse)

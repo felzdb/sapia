@@ -114,3 +114,39 @@ export async function logout(token: string): Promise<void> {
     },
   });
 }
+
+export type DocumentResponse = {
+  id: number;
+  original_filename: string;
+  size_bytes: number;
+  status: string;
+  uploaded_at: string;
+};
+
+export async function uploadDocument(
+  token: string,
+  file: File
+): Promise<DocumentResponse> {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${API_URL}/documents/upload`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}
