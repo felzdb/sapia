@@ -154,7 +154,12 @@ export async function resetPassword(
 
   if (!response.ok) {
     throw new Error(await parseError(response));
-    
+  }
+
+  return response.json();
+}
+
+
 export type DocumentResponse = {
   id: number;
   original_filename: string;
