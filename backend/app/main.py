@@ -1,4 +1,5 @@
 import secrets
+import smtplib
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
@@ -128,8 +129,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "A senha deve ter no mínimo 8 caracteres, incluindo "
-                "letra maiúscula, minúscula, número e caractere especial."
+                "A senha deve conter no mínimo 8 caracteres, "
+                "letras maiúsculas, minúsculas e números."
             ),
         )
 
@@ -162,7 +163,17 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
     db.add(confirmation_token)
 
-    send_confirmation_email(email, confirmation_token.token)
+    try:
+        send_confirmation_email(email, confirmation_token.token)
+    except (RuntimeError, smtplib.SMTPException, OSError) as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Não foi possível enviar o e-mail de confirmação. "
+                "Tente novamente."
+            ),
+        ) from exc
 
     db.commit()
     db.refresh(user)
@@ -314,10 +325,19 @@ def confirm_account(token: str, db: Session = Depends(get_db)):
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == payload.email))
 
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="E-mail e/ou senha incorretos.",
+            detail="Este endereço de e-mail não está cadastrado no sistema.",
+        )
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=(
+                "E-mail e/ou senha incorretos. "
+                "Tente novamente ou recupere sua senha."
+            ),
         )
 
     if user.status != "ATIVO":

@@ -34,10 +34,8 @@ async function parseError(response: Response) {
           return "Informe um endereço de e-mail válido.";
 
         case "password":
-          return "A senha deve ter no mínimo 8 caracteres.";
-
         case "password_confirmation":
-          return "A confirmação da senha deve ter no mínimo 8 caracteres.";
+          return "A senha deve conter no mínimo 8 caracteres, letras maiúsculas, minúsculas e números.";
 
         default:
           return "Verifique os dados informados e tente novamente.";
