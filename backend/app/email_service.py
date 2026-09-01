@@ -39,4 +39,34 @@ def send_confirmation_email(recipient: str, token: str) -> None:
         server.starttls()
         server.login(smtp_user, smtp_password)
         server.send_message(message)
-        
+
+
+def send_password_reset_email(recipient: str, token: str) -> None:
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM")
+
+    if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
+        raise RuntimeError("Configuração de e-mail incompleta.")
+
+    reset_url = f"{FRONTEND_URL}/?reset_token={token}"
+
+    message = EmailMessage()
+    message["Subject"] = "Recuperação de senha - SAPIA"
+    message["From"] = smtp_from
+    message["To"] = recipient
+    message.set_content(
+        "Olá!\n\n"
+        "Foi solicitada a recuperação da sua senha no SAPIA.\n\n"
+        "Para definir uma nova senha, acesse o link abaixo:\n\n"
+        f"{reset_url}\n\n"
+        "Se você não solicitou a recuperação, ignore esta mensagem."
+    )
+
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(message)
+

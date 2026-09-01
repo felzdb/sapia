@@ -208,6 +208,9 @@ input:focus {
   cursor: wait;
 }
 
+.primary-button.completed-button:disabled {
+  cursor: default;
+}
 
 .secondary-button {
   width: 100%;
@@ -227,6 +230,21 @@ input:focus {
   background: #f5f7fb;
 }
 
+.forgot-password-link {
+  width: fit-content;
+  margin: -4px 0 2px auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #263b77;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
 
 .error-box {
   padding: 10px;
@@ -243,6 +261,8 @@ input:focus {
   border: 1px dashed #ccc;
   background: #f8f9fc;
   font-size: 12px;
+  display: grid;
+  gap: 4px;
 }
 
 /* App */

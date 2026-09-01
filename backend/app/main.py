@@ -9,7 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from .email_service import FRONTEND_URL, send_confirmation_email
+from .email_service import (
+    FRONTEND_URL,
+    send_confirmation_email,
+    send_password_reset_email,
+)
 
 from .auth import (
     SESSIONS,
@@ -24,10 +28,12 @@ from .auth import (
 from .database import Base, SessionLocal, engine, ensure_user_confirmed_at_column
 from .models import ConfirmationToken, User
 from .schemas import (
+    ForgotPasswordRequest,
     HealthResponse,
     LoginRequest,
     LoginResponse,
     RegisterRequest,
+    ResetPasswordRequest,
     UserResponse,
 )
 
@@ -319,6 +325,116 @@ def confirm_account(token: str, db: Session = Depends(get_db)):
         """.replace("__FRONTEND_URL__", FRONTEND_URL),
         status_code=200,
     )
+
+
+@app.post("/auth/forgot-password")
+def forgot_password(
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    email = str(payload.email).lower()
+
+    user = db.scalar(select(User).where(User.email == email))
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Este endereço de e-mail não está cadastrado no sistema.",
+        )
+
+    reset_token = ConfirmationToken(
+        token=secrets.token_urlsafe(32),
+        type="RECUPERACAO_SENHA",
+        expires_at=datetime.utcnow() + timedelta(hours=1),
+        used=False,
+        user_id=user.id,
+    )
+
+    db.add(reset_token)
+
+    try:
+        send_password_reset_email(email, reset_token.token)
+    except (RuntimeError, smtplib.SMTPException, OSError) as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Não foi possível enviar o e-mail de recuperação. "
+                "Tente novamente."
+            ),
+        ) from exc
+
+    db.commit()
+
+    return {
+        "message": (
+            "E-mail de recuperação enviado. "
+            "Verifique sua caixa de entrada."
+        )
+    }
+
+
+@app.post("/auth/reset-password")
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    if payload.password != payload.password_confirmation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="As senhas informadas não coincidem.",
+        )
+
+    if not password_is_strong(payload.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "A senha deve conter no mínimo 8 caracteres, "
+                "letras maiúsculas, minúsculas e números."
+            ),
+        )
+
+    reset_token = db.scalar(
+        select(ConfirmationToken).where(
+            ConfirmationToken.token == payload.token,
+            ConfirmationToken.type == "RECUPERACAO_SENHA",
+        )
+    )
+
+    if reset_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token de recuperação inválido.",
+        )
+
+    if reset_token.used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este token de recuperação já foi utilizado.",
+        )
+
+    if reset_token.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O token de recuperação expirou.",
+        )
+
+    user = db.get(User, reset_token.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado.",
+        )
+
+    user.password_hash = hash_password(payload.password)
+    reset_token.used = True
+
+    db.commit()
+
+    return {
+        "message": "Senha alterada com sucesso."
+    }
 
 
 @app.post("/auth/login", response_model=LoginResponse)
