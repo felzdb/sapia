@@ -5,12 +5,19 @@ import { getMe, type User } from "./api";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const TOKEN_KEY = "sapia_token";
 
 export default function App() {
+  const [resetToken, setResetToken] = useState<string | null>(() =>
+  new URLSearchParams(window.location.search).get("reset_token")
+);
   const [user, setUser] = useState<User | null>(null);
-  const [authPage, setAuthPage] = useState<"login" | "register">("login");
+  const [authPage, setAuthPage] = useState<
+  "login" | "register" | "forgot-password"
+>("login");
 
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem(TOKEN_KEY)
@@ -33,6 +40,23 @@ export default function App() {
       .finally(() => setBooting(false));
   }, [token]);
 
+  if (resetToken) {
+  return (
+    <ResetPassword
+      token={resetToken}
+      onBackToLogin={() => {
+        window.history.replaceState(
+          {},
+          "",
+          window.location.pathname
+        );
+        setResetToken(null);
+        setAuthPage("login");
+      }}
+    />
+  );
+}
+
   if (booting) {
     return (
       <div className="loading-screen">
@@ -54,6 +78,14 @@ export default function App() {
       );
     }
 
+    if (authPage === "forgot-password") {
+      return (
+        <ForgotPassword
+          onBackToLogin={() => setAuthPage("login")}
+        />
+      );
+    }
+
     return (
       <Login
         onAuthenticated={(user, token) => {
@@ -62,6 +94,7 @@ export default function App() {
           setUser(user);
         }}
         onRegister={() => setAuthPage("register")}
+        onForgotPassword={() => setAuthPage("forgot-password")}
       />
     );
 }

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import {
+    ArrowLeft,
     ArrowRight,
     FileText,
     Scale,
@@ -7,42 +8,41 @@ import {
     Sparkles,
 } from "lucide-react";
 
-import { login, type User } from "../api";
+import { forgotPassword } from "../api";
 
-type LoginProps = {
-    onAuthenticated: (user: User, token: string) => void;
-    onRegister: () => void;
-    onForgotPassword: () => void;
+type ForgotPasswordProps = {
+    onBackToLogin: () => void;
 };
 
-export default function Login({
-    onAuthenticated,
-    onRegister,
-    onForgotPassword,
-}: LoginProps) {
-    const [email, setEmail] = useState("admin@sapia.com");
-    const [password, setPassword] = useState("Sapia@123");
+export default function ForgotPassword({
+    onBackToLogin,
+}: ForgotPasswordProps) {
+    const [email, setEmail] = useState("");
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
 
         setError("");
+        setSuccess("");
+
+        if (!email.trim()) {
+            setError("Informe seu endereço de e-mail.");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const result = await login(email, password);
-
-            onAuthenticated(
-                result.user,
-                result.access_token
-            );
+            const result = await forgotPassword(email);
+            setSuccess(result.message);
         } catch (err) {
             setError(
                 err instanceof Error
                     ? err.message
-                    : "Falha ao autenticar."
+                    : "Falha ao solicitar recuperação de senha."
             );
         } finally {
             setLoading(false);
@@ -56,18 +56,25 @@ export default function Login({
                     <div className="brand-icon">
                         <Scale size={30} />
                     </div>
+
                     <div>
                         <span className="brand-name">SAPIA</span>
-                        <span className="brand-subtitle">Tecnologia aplicada ao jurídico</span>
+                        <span className="brand-subtitle">
+                            Tecnologia aplicada ao jurídico
+                        </span>
                     </div>
                 </div>
 
                 <div className="hero-copy">
                     <span className="eyebrow">Protótipo funcional</span>
-                    <h1>Automação inteligente para petições previdenciárias.</h1>
+
+                    <h1>
+                        Automação inteligente para petições previdenciárias.
+                    </h1>
+
                     <p>
-                        Centralize o envio do documento, a leitura automatizada e a geração
-                        da petição inicial em um único fluxo.
+                        Centralize o envio do documento, a leitura automatizada
+                        e a geração da petição inicial em um único fluxo.
                     </p>
                 </div>
 
@@ -76,10 +83,12 @@ export default function Login({
                         <Sparkles size={20} />
                         <span>Extração assistida por IA</span>
                     </div>
+
                     <div className="feature-row">
                         <ShieldCheck size={20} />
                         <span>Conferência antes da geração</span>
                     </div>
+
                     <div className="feature-row">
                         <FileText size={20} />
                         <span>Exportação estruturada de documentos</span>
@@ -94,15 +103,14 @@ export default function Login({
             <section className="auth-form-panel">
                 <div className="login-card">
                     <div className="login-heading">
-                        <span className="status-pill">
-                            <span className="status-dot" />
-                            Ambiente demonstrativo
-                        </span>
-                        <h2>Acesse o SAPIA</h2>
-                        <p>Utilize as credenciais demonstrativas para entrar no sistema.</p>
+                        <h2>Recuperar senha</h2>
+
+                        <p>
+                            Informe seu e-mail para receber o link de recuperação.
+                        </p>
                     </div>
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} noValidate>
                         <label>
                             E-mail
                             <input
@@ -114,45 +122,37 @@ export default function Login({
                             />
                         </label>
 
-                        <label>
-                            Senha
-                            <input
-                                value={password}
-                                onChange={(event) => setPassword(event.target.value)}
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                            />
-                        </label>
-
-                        <button
-                            className="forgot-password-link"
-                            type="button"
-                            onClick={onForgotPassword}
-                        >
-                            Esqueci minha senha
-                        </button>
-
                         {error && <div className="error-box">{error}</div>}
 
-                        <button className="primary-button" type="submit" disabled={loading}>
-                            {loading ? "Entrando..." : "Entrar"}
-                            {!loading && <ArrowRight size={18} />}
+                        {success && (
+                            <div className="demo-credentials">
+                                {success}
+                            </div>
+                        )}
+
+                        <button
+                            className={`primary-button${success ? " completed-button" : ""}`}
+                            type="submit"
+                            disabled={loading || Boolean(success)}
+>
+                            {loading
+                                ? "Enviando..."
+                                : success
+                                    ? "Link enviado"
+                                    : "Enviar link"}
+
+                            {!loading && !success && <ArrowRight size={18} />}
+                        </button>
+
+                        <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={onBackToLogin}
+                        >
+                            <ArrowLeft size={16} />
+                            Voltar para o login
                         </button>
                     </form>
-
-                    <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={onRegister}
-                    >
-                        Criar uma conta
-                    </button>
-
-                    <div className="demo-credentials">
-                        <strong>Credenciais do protótipo</strong>
-                        <span>admin@sapia.com · Sapia@123</span>
-                    </div>
                 </div>
             </section>
         </main>
