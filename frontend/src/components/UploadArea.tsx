@@ -7,6 +7,8 @@ import {
 import {
   CheckCircle2,
   FileText,
+  Files,
+  ScanText,
   UploadCloud,
 } from "lucide-react";
 
@@ -147,21 +149,78 @@ export default function UploadArea({
       )}
 
       {document && (
-        <div className="upload-success">
+        <section
+          className="document-result"
+          aria-live="polite"
+        >
+          <div className="upload-success">
+            <CheckCircle2 size={22} />
 
-          <CheckCircle2 size={22} />
+            <div>
+              <strong>
+                Documento processado
+              </strong>
 
-          <div>
-            <strong>
-              Documento enviado
-            </strong>
-
-            <span>
-              {document.original_filename}
-            </span>
+              <span>
+                {document.original_filename}
+              </span>
+            </div>
           </div>
 
-        </div>
+          <div className="document-summary">
+            <article className="document-summary-card">
+              <CheckCircle2 size={20} />
+              <span>Status</span>
+              <strong>{document.status}</strong>
+            </article>
+
+            <article className="document-summary-card">
+              <Files size={20} />
+              <span>Páginas</span>
+              <strong>{document.page_count ?? 0}</strong>
+            </article>
+
+            <article className="document-summary-card">
+              <ScanText size={20} />
+              <span>Páginas sem texto</span>
+              <strong>
+                {document.pages_without_text.length > 0
+                  ? document.pages_without_text.join(", ")
+                  : "Nenhuma"}
+              </strong>
+            </article>
+
+            <article className="document-summary-card">
+              <FileText size={20} />
+              <span>Tamanho</span>
+              <strong>
+                {(document.size_bytes / 1024).toLocaleString(
+                  "pt-BR",
+                  { maximumFractionDigits: 1 }
+                )} KB
+              </strong>
+            </article>
+          </div>
+
+          <div className="extracted-content">
+            <div className="extracted-content-heading">
+              <FileText size={20} />
+              <h3>Conteúdo extraído</h3>
+            </div>
+
+            <pre>
+              {document.extracted_text?.trim()
+                || "Nenhum texto foi encontrado neste documento."}
+            </pre>
+
+            {document.pages_without_text.length > 0 && (
+              <p className="ocr-warning">
+                As páginas indicadas não possuem camada de texto e
+                poderão precisar de processamento por OCR.
+              </p>
+            )}
+          </div>
+        </section>
       )}
     </>
   );

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -75,6 +75,16 @@ class Document(Base):
         String(30),
         default="ENVIADO",
         nullable=False
+    )
+
+    extracted_text: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    page_count: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
     )
 
     uploaded_at: Mapped[datetime] = mapped_column(

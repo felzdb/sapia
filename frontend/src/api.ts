@@ -166,6 +166,9 @@ export type DocumentResponse = {
   size_bytes: number;
   status: string;
   uploaded_at: string;
+  extracted_text: string | null;
+  page_count: number | null;
+  pages_without_text: number[];
 };
 
 export async function uploadDocument(

@@ -44,8 +44,13 @@ class HealthResponse(BaseModel):
     service: str
 
 class DocumentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     original_filename: str
     size_bytes: int
     status: str
     uploaded_at: datetime
+    extracted_text: str | None = None
+    page_count: int | None = None
+    pages_without_text: list[int] = Field(default_factory=list)
