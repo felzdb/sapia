@@ -1,4 +1,3 @@
-from pathlib import Path
 from uuid import uuid4
 
 from fastapi import (
@@ -13,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
 from .models import Document, User
+from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import DocumentResponse
 from .storage import get_upload_directory
 
@@ -68,17 +68,42 @@ async def upload_document(
 
     file_path.write_bytes(content)
 
+    try:
+        reading = read_pdf_document(file_path)
+    except PDFReadError as exc:
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
     document = Document(
         user_id=current_user.id,
         original_filename=filename,
         stored_filename=generated_filename,
         storage_path=str(file_path),
         size_bytes=len(content),
-        status="ENVIADO",
+        status="PROCESSADO",
+        extracted_text=reading.text,
+        page_count=reading.page_count,
     )
 
-    db.add(document)
-    db.commit()
-    db.refresh(document)
+    try:
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+    except Exception:
+        db.rollback()
+        file_path.unlink(missing_ok=True)
+        raise
 
-    return document
+    return {
+        "id": document.id,
+        "original_filename": document.original_filename,
+        "size_bytes": document.size_bytes,
+        "status": document.status,
+        "uploaded_at": document.uploaded_at,
+        "extracted_text": document.extracted_text,
+        "page_count": document.page_count,
+        "pages_without_text": list(reading.pages_without_text),
+    }
