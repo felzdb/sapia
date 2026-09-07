@@ -54,7 +54,7 @@ async def upload_document(
     if not content.startswith(b"%PDF"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="O arquivo enviado não parece ser um PDF válido.",
+            detail="Não foi possível processar o documento. Verifique o arquivo e tente novamente.",
         )
 
     generated_filename = f"{uuid4()}.pdf"
