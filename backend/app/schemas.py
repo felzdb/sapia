@@ -43,6 +43,13 @@ class HealthResponse(BaseModel):
     status: str
     service: str
 
+
+class ClientDataResponse(BaseModel):
+    nome: str | None = None
+    cpf: str | None = None
+    data_nascimento: str | None = None
+
+
 class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,3 +61,4 @@ class DocumentResponse(BaseModel):
     extracted_text: str | None = None
     page_count: int | None = None
     pages_without_text: list[int] = Field(default_factory=list)
+    dados_cliente: ClientDataResponse | None = None
