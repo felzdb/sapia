@@ -11,6 +11,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
+from .client_data import extract_client_data
 from .models import Document, User
 from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import DocumentResponse
@@ -61,11 +62,7 @@ async def upload_document(
 
     upload_directory = get_upload_directory()
 
-    file_path = (
-        upload_directory /
-        generated_filename
-    )
-
+    file_path = upload_directory / generated_filename
     file_path.write_bytes(content)
 
     try:
@@ -76,6 +73,8 @@ async def upload_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+    client_data = extract_client_data(reading.text)
 
     document = Document(
         user_id=current_user.id,
@@ -106,4 +105,5 @@ async def upload_document(
         "extracted_text": document.extracted_text,
         "page_count": document.page_count,
         "pages_without_text": list(reading.pages_without_text),
+        "dados_cliente": client_data,
     }
