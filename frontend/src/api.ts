@@ -106,6 +106,7 @@ export async function getMe(token: string): Promise<User> {
   return response.json();
 }
 
+
 export async function logout(token: string): Promise<void> {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
@@ -160,6 +161,17 @@ export async function resetPassword(
 }
 
 
+export type ClientData = {
+  nome: string | null;
+  cpf: string | null;
+  data_nascimento: string | null;
+  nit_pis: string | null;
+  numero_beneficio: string | null;
+  data_inicio_beneficio: string | null;
+  competencias: string[];
+  valor_beneficio: string | null;
+};
+
 export type DocumentResponse = {
   id: number;
   original_filename: string;
@@ -169,6 +181,7 @@ export type DocumentResponse = {
   extracted_text: string | null;
   page_count: number | null;
   pages_without_text: number[];
+  dados_cliente: ClientData | null;
 };
 
 export async function uploadDocument(
