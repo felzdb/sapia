@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -48,6 +50,11 @@ class ClientDataResponse(BaseModel):
     nome: str | None = None
     cpf: str | None = None
     data_nascimento: str | None = None
+    nit_pis: str | None = None
+    numero_beneficio: str | None = None
+    data_inicio_beneficio: str | None = None
+    competencias: list[str] = Field(default_factory=list)
+    valor_beneficio: str | None = None
 
 
 class DocumentResponse(BaseModel):
