@@ -169,6 +169,8 @@ export type DocumentResponse = {
   extracted_text: string | null;
   page_count: number | null;
   pages_without_text: number[];
+  benefit_type: string | null;
+  benefit_confidence: number | null;
 };
 
 export async function uploadDocument(

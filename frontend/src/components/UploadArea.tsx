@@ -22,6 +22,20 @@ type UploadAreaProps = {
   token: string;
 };
 
+const benefitLabels: Record<string, string> = {
+  APOSENTADORIA_IDADE: "Aposentadoria por Idade",
+  APOSENTADORIA_TEMPO_CONTRIBUICAO: "Aposentadoria por Tempo de Contribuição",
+  APOSENTADORIA_INCAPACIDADE: "Aposentadoria por Incapacidade Permanente",
+  AUXILIO_INCAPACIDADE_TEMPORARIA: "Auxílio por Incapacidade Temporária",
+  AUXILIO_ACIDENTE: "Auxílio-Acidente",
+  PENSAO_MORTE: "Pensão por Morte",
+  SALARIO_MATERNIDADE: "Salário-Maternidade",
+  BPC_IDOSO: "BPC - Idoso",
+  BPC_DEFICIENCIA: "BPC - Pessoa com Deficiência",
+  OUTRO: "Outro",
+  NAO_IDENTIFICADO: "Não identificado",
+};
+
 
 export default function UploadArea({
   token,
@@ -198,6 +212,15 @@ export default function UploadArea({
                   "pt-BR",
                   { maximumFractionDigits: 1 }
                 )} KB
+              </strong>
+            </article>
+            <article className="document-summary-card">
+              <ScanText size={20} />
+              <span>Benefício identificado</span>
+              <strong>
+                {document.benefit_type
+                  ? benefitLabels[document.benefit_type] ?? document.benefit_type
+                  : "Não identificado"}
               </strong>
             </article>
           </div>
