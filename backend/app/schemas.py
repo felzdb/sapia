@@ -54,3 +54,5 @@ class DocumentResponse(BaseModel):
     extracted_text: str | None = None
     page_count: int | None = None
     pages_without_text: list[int] = Field(default_factory=list)
+    benefit_type: str | None = None
+    benefit_confidence: float | None = None

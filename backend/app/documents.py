@@ -15,6 +15,7 @@ from .models import Document, User
 from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import DocumentResponse
 from .storage import get_upload_directory
+from .benefit_identifier import identify_benefit
 
 
 router = APIRouter(
@@ -76,6 +77,7 @@ async def upload_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+    benefit_identification = identify_benefit(reading.text)
 
     document = Document(
         user_id=current_user.id,
@@ -106,4 +108,6 @@ async def upload_document(
         "extracted_text": document.extracted_text,
         "page_count": document.page_count,
         "pages_without_text": list(reading.pages_without_text),
+        "benefit_type": benefit_identification.benefit_type,
+        "benefit_confidence": benefit_identification.confidence,
     }
