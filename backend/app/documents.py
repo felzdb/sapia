@@ -88,6 +88,8 @@ async def upload_document(
         status="PROCESSADO",
         extracted_text=reading.text,
         page_count=reading.page_count,
+        benefit_type=benefit_identification.benefit_type,
+        benefit_confidence=benefit_identification.confidence,
     )
 
     try:
