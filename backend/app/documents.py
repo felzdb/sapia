@@ -8,14 +8,15 @@ from fastapi import (
     UploadFile,
     status,
 )
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
 from .models import Document, User
 from .pdf_reader import PDFReadError, read_pdf_document
-from .schemas import DocumentResponse
+from .schemas import BenefitCorrectionRequest, DocumentResponse
 from .storage import get_upload_directory
-from .benefit_identifier import identify_benefit
+from .benefit_identifier import BENEFIT_TYPES, identify_benefit
 
 
 router = APIRouter(
@@ -90,6 +91,7 @@ async def upload_document(
         page_count=reading.page_count,
         benefit_type=benefit_identification.benefit_type,
         benefit_confidence=benefit_identification.confidence,
+        benefit_original_type=benefit_identification.benefit_type,
     )
 
     try:
@@ -112,4 +114,44 @@ async def upload_document(
         "pages_without_text": list(reading.pages_without_text),
         "benefit_type": benefit_identification.benefit_type,
         "benefit_confidence": benefit_identification.confidence,
+    }
+
+@router.patch("/{document_id}/benefit")
+def correct_document_benefit(
+    document_id: int,
+    correction: BenefitCorrectionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if correction.benefit_type not in BENEFIT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tipo de benefício inválido.",
+        )
+
+    document = db.scalar(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+        )
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Documento não encontrado.",
+        )
+
+    document.benefit_type = correction.benefit_type
+    document.benefit_corrected_manually = True
+
+    db.commit()
+    db.refresh(document)
+
+    return {
+        "id": document.id,
+        "benefit_original_type": document.benefit_original_type,
+        "benefit_type": document.benefit_type,
+        "benefit_confidence": document.benefit_confidence,
+        "benefit_corrected_manually": document.benefit_corrected_manually,
     }

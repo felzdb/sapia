@@ -97,6 +97,17 @@ class Document(Base):
         nullable=True
     )
 
+    benefit_original_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    benefit_corrected_manually: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     
 
     uploaded_at: Mapped[datetime] = mapped_column(
