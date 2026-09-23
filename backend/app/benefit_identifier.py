@@ -8,6 +8,7 @@ BENEFIT_TYPES = (
     "APOSENTADORIA_INCAPACIDADE",
     "AUXILIO_INCAPACIDADE_TEMPORARIA",
     "AUXILIO_ACIDENTE",
+    "AUXILIO_RECLUSAO",
     "PENSAO_MORTE",
     "SALARIO_MATERNIDADE",
     "BPC_IDOSO",
@@ -75,6 +76,15 @@ def identify_benefit(text: str) -> BenefitIdentification:
     ):
         return BenefitIdentification(
             benefit_type="AUXILIO_ACIDENTE",
+            confidence=0.95,
+        )
+
+    if (
+        "AUXILIO-RECLUSAO" in normalized_text
+        or "AUXILIO RECLUSAO" in normalized_text
+    ):
+        return BenefitIdentification(
+            benefit_type="AUXILIO_RECLUSAO",
             confidence=0.95,
         )
 

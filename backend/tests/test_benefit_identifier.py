@@ -73,6 +73,16 @@ class BenefitIdentifierTests(unittest.TestCase):
             "AUXILIO_ACIDENTE",
         )
 
+    def test_identifies_prison_benefit(self):
+        result = identify_benefit(
+            "Benefício: Auxílio-Reclusão."
+        )
+
+        self.assertEqual(
+            result.benefit_type,
+            "AUXILIO_RECLUSAO",
+        )
+
     def test_identifies_death_pension(self):
         result = identify_benefit("Benefício: Pensão por Morte.")
 
