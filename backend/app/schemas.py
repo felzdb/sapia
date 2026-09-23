@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -43,6 +45,18 @@ class HealthResponse(BaseModel):
     status: str
     service: str
 
+
+class ClientDataResponse(BaseModel):
+    nome: str | None = None
+    cpf: str | None = None
+    data_nascimento: str | None = None
+    nit_pis: str | None = None
+    numero_beneficio: str | None = None
+    data_inicio_beneficio: str | None = None
+    competencias: list[str] = Field(default_factory=list)
+    valor_beneficio: str | None = None
+
+
 class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,3 +68,4 @@ class DocumentResponse(BaseModel):
     extracted_text: str | None = None
     page_count: int | None = None
     pages_without_text: list[int] = Field(default_factory=list)
+    dados_cliente: ClientDataResponse | None = None
