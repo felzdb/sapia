@@ -29,6 +29,7 @@ const benefitLabels: Record<string, string> = {
   APOSENTADORIA_INCAPACIDADE: "Aposentadoria por Incapacidade Permanente",
   AUXILIO_INCAPACIDADE_TEMPORARIA: "Auxílio por Incapacidade Temporária",
   AUXILIO_ACIDENTE: "Auxílio-Acidente",
+  AUXILIO_RECLUSAO: "Auxílio-Reclusão",
   PENSAO_MORTE: "Pensão por Morte",
   SALARIO_MATERNIDADE: "Salário-Maternidade",
   BPC_IDOSO: "BPC - Idoso",
