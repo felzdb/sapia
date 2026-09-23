@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import {
+  correctDocumentBenefit,
   uploadDocument,
   type DocumentResponse,
 } from "../api";
@@ -50,6 +51,15 @@ export default function UploadArea({
 
   const [document, setDocument] =
     useState<DocumentResponse | null>(null);
+
+      const [selectedBenefit, setSelectedBenefit] =
+    useState("");
+
+  const [correctingBenefit, setCorrectingBenefit] =
+    useState(false);
+
+  const [correctionSuccess, setCorrectionSuccess] =
+    useState(false);
 
 
   async function sendFile(file: File) {
@@ -92,6 +102,42 @@ export default function UploadArea({
 
     } finally {
       setUploading(false);
+    }
+  }
+
+    async function handleBenefitCorrection() {
+    if (!document || !selectedBenefit) {
+      return;
+    }
+
+    setError("");
+    setCorrectionSuccess(false);
+    setCorrectingBenefit(true);
+
+    try {
+      const result = await correctDocumentBenefit(
+        token,
+        document.id,
+        selectedBenefit
+      );
+
+      setDocument({
+        ...document,
+        benefit_type: result.benefit_type,
+        benefit_confidence: result.benefit_confidence,
+      });
+
+      setCorrectionSuccess(true);
+
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível corrigir o benefício."
+      );
+
+    } finally {
+      setCorrectingBenefit(false);
     }
   }
 
@@ -222,6 +268,49 @@ export default function UploadArea({
                   ? benefitLabels[document.benefit_type] ?? document.benefit_type
                   : "Não identificado"}
               </strong>
+                          <article className="document-summary-card">
+              <ScanText size={20} />
+              <span>Corrigir benefício</span>
+
+              <select
+                value={selectedBenefit}
+                onChange={(event) =>
+                  setSelectedBenefit(event.target.value)
+                }
+                disabled={correctingBenefit}
+              >
+                <option value="">
+                  Selecione...
+                </option>
+
+                {Object.entries(benefitLabels).map(
+                  ([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  )
+                )}
+              </select>
+
+              <button
+                type="button"
+                onClick={handleBenefitCorrection}
+                disabled={
+                  !selectedBenefit ||
+                  correctingBenefit
+                }
+              >
+                {correctingBenefit
+                  ? "Salvando..."
+                  : "Confirmar correção"}
+              </button>
+
+              {correctionSuccess && (
+                <small>
+                  Benefício corrigido com sucesso.
+                </small>
+              )}
+            </article>
             </article>
           </div>
 

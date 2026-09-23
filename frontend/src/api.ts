@@ -200,3 +200,39 @@ export async function uploadDocument(
 
   return response.json();
 }
+
+export type BenefitCorrectionResponse = {
+  id: number;
+  benefit_original_type: string | null;
+  benefit_type: string;
+  benefit_confidence: number | null;
+  benefit_corrected_manually: boolean;
+};
+
+export async function correctDocumentBenefit(
+  token: string,
+  documentId: number,
+  benefitType: string
+): Promise<BenefitCorrectionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/benefit`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        benefit_type: benefitType,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}
