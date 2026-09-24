@@ -106,6 +106,7 @@ export async function getMe(token: string): Promise<User> {
   return response.json();
 }
 
+
 export async function logout(token: string): Promise<void> {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
@@ -159,6 +160,17 @@ export async function resetPassword(
   return response.json();
 }
 
+
+export type ClientData = {
+  nome: string | null;
+  cpf: string | null;
+  data_nascimento: string | null;
+  nit_pis: string | null;
+  numero_beneficio: string | null;
+  data_inicio_beneficio: string | null;
+  competencias: string[];
+  valor_beneficio: string | null;
+};
 
 export type DocumentResponse = {
   id: number;

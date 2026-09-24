@@ -228,6 +228,68 @@ export default function UploadArea({
             </div>
           </div>
 
+          {document.dados_cliente && (
+            <section className="client-data-card">
+              <div className="extracted-content-heading">
+                <FileText size={20} />
+                <div>
+                  <h3>Dados extraídos do cliente</h3>
+                  <span>Confira as informações identificadas no documento.</span>
+                </div>
+              </div>
+
+              <div className="client-data-grid">
+                <article>
+                  <span>Nome completo</span>
+                  <strong>{document.dados_cliente.nome ?? "Não identificado"}</strong>
+                </article>
+
+                <article>
+                  <span>CPF</span>
+                  <strong>{document.dados_cliente.cpf ?? "Não identificado"}</strong>
+                </article>
+
+                <article>
+                  <span>Data de nascimento</span>
+                  <strong>{document.dados_cliente.data_nascimento ?? "Não identificado"}</strong>
+                </article>
+
+                <article>
+                  <span>NIT/PIS</span>
+                  <strong>{document.dados_cliente.nit_pis ?? "Não identificado"}</strong>
+                </article>
+
+                <article>
+                  <span>Número do benefício</span>
+                  <strong>{document.dados_cliente.numero_beneficio ?? "Não identificado"}</strong>
+                </article>
+
+                <article>
+                  <span>Data de início do benefício (DIB)</span>
+                  <strong>{document.dados_cliente.data_inicio_beneficio ?? "Não identificado"}</strong>
+                </article>
+
+                <article>
+                  <span>Competências</span>
+                  <strong>
+                    {document.dados_cliente.competencias.length > 0
+                      ? document.dados_cliente.competencias.join(", ")
+                      : "Não identificadas"}
+                  </strong>
+                </article>
+
+                <article>
+                  <span>Valor do benefício</span>
+                  <strong>{document.dados_cliente.valor_beneficio ?? "Não identificado"}</strong>
+                </article>
+              </div>
+
+              <p className="client-data-note">
+                Campos não identificados devem ser conferidos e preenchidos manualmente antes de prosseguir.
+              </p>
+            </section>
+          )}
+
           <div className="document-summary">
             <article className="document-summary-card">
               <CheckCircle2 size={20} />

@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
+from .client_data import extract_client_data
 from .models import Document, User
 from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import BenefitCorrectionRequest, DocumentResponse
@@ -63,11 +64,7 @@ async def upload_document(
 
     upload_directory = get_upload_directory()
 
-    file_path = (
-        upload_directory /
-        generated_filename
-    )
-
+    file_path = upload_directory / generated_filename
     file_path.write_bytes(content)
 
     try:
@@ -79,6 +76,8 @@ async def upload_document(
             detail=str(exc),
         ) from exc
     benefit_identification = identify_benefit(reading.text)
+
+    client_data = extract_client_data(reading.text)
 
     document = Document(
         user_id=current_user.id,
