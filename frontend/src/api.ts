@@ -181,7 +181,8 @@ export type DocumentResponse = {
   extracted_text: string | null;
   page_count: number | null;
   pages_without_text: number[];
-  dados_cliente: ClientData | null;
+  benefit_type: string | null;
+  benefit_confidence: number | null;
 };
 
 export async function uploadDocument(
@@ -200,6 +201,42 @@ export async function uploadDocument(
         Authorization: `Bearer ${token}`,
       },
       body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}
+
+export type BenefitCorrectionResponse = {
+  id: number;
+  benefit_original_type: string | null;
+  benefit_type: string;
+  benefit_confidence: number | null;
+  benefit_corrected_manually: boolean;
+};
+
+export async function correctDocumentBenefit(
+  token: string,
+  documentId: number,
+  benefitType: string
+): Promise<BenefitCorrectionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/benefit`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        benefit_type: benefitType,
+      }),
     }
   );
 

@@ -68,4 +68,8 @@ class DocumentResponse(BaseModel):
     extracted_text: str | None = None
     page_count: int | None = None
     pages_without_text: list[int] = Field(default_factory=list)
-    dados_cliente: ClientDataResponse | None = None
+    benefit_type: str | None = None
+    benefit_confidence: float | None = None
+
+class BenefitCorrectionRequest(BaseModel):
+    benefit_type: str

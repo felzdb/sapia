@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import {
+  correctDocumentBenefit,
   uploadDocument,
   type DocumentResponse,
 } from "../api";
@@ -20,6 +21,21 @@ import {
 
 type UploadAreaProps = {
   token: string;
+};
+
+const benefitLabels: Record<string, string> = {
+  APOSENTADORIA_IDADE: "Aposentadoria por Idade",
+  APOSENTADORIA_TEMPO_CONTRIBUICAO: "Aposentadoria por Tempo de Contribuição",
+  APOSENTADORIA_INCAPACIDADE: "Aposentadoria por Incapacidade Permanente",
+  AUXILIO_INCAPACIDADE_TEMPORARIA: "Auxílio por Incapacidade Temporária",
+  AUXILIO_ACIDENTE: "Auxílio-Acidente",
+  AUXILIO_RECLUSAO: "Auxílio-Reclusão",
+  PENSAO_MORTE: "Pensão por Morte",
+  SALARIO_MATERNIDADE: "Salário-Maternidade",
+  BPC_IDOSO: "BPC - Idoso",
+  BPC_DEFICIENCIA: "BPC - Pessoa com Deficiência",
+  OUTRO: "Outro",
+  NAO_IDENTIFICADO: "Não identificado",
 };
 
 
@@ -36,6 +52,15 @@ export default function UploadArea({
 
   const [document, setDocument] =
     useState<DocumentResponse | null>(null);
+
+      const [selectedBenefit, setSelectedBenefit] =
+    useState("");
+
+  const [correctingBenefit, setCorrectingBenefit] =
+    useState(false);
+
+  const [correctionSuccess, setCorrectionSuccess] =
+    useState(false);
 
 
   async function sendFile(file: File) {
@@ -78,6 +103,42 @@ export default function UploadArea({
 
     } finally {
       setUploading(false);
+    }
+  }
+
+    async function handleBenefitCorrection() {
+    if (!document || !selectedBenefit) {
+      return;
+    }
+
+    setError("");
+    setCorrectionSuccess(false);
+    setCorrectingBenefit(true);
+
+    try {
+      const result = await correctDocumentBenefit(
+        token,
+        document.id,
+        selectedBenefit
+      );
+
+      setDocument({
+        ...document,
+        benefit_type: result.benefit_type,
+        benefit_confidence: result.benefit_confidence,
+      });
+
+      setCorrectionSuccess(true);
+
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível corrigir o benefício."
+      );
+
+    } finally {
+      setCorrectingBenefit(false);
     }
   }
 
@@ -261,6 +322,58 @@ export default function UploadArea({
                   { maximumFractionDigits: 1 }
                 )} KB
               </strong>
+            </article>
+            <article className="document-summary-card">
+              <ScanText size={20} />
+              <span>Benefício identificado</span>
+              <strong>
+                {document.benefit_type
+                  ? benefitLabels[document.benefit_type] ?? document.benefit_type
+                  : "Não identificado"}
+              </strong>
+                          <article className="document-summary-card">
+              <ScanText size={20} />
+              <span>Corrigir benefício</span>
+
+              <select
+                value={selectedBenefit}
+                onChange={(event) =>
+                  setSelectedBenefit(event.target.value)
+                }
+                disabled={correctingBenefit}
+              >
+                <option value="">
+                  Selecione...
+                </option>
+
+                {Object.entries(benefitLabels).map(
+                  ([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  )
+                )}
+              </select>
+
+              <button
+                type="button"
+                onClick={handleBenefitCorrection}
+                disabled={
+                  !selectedBenefit ||
+                  correctingBenefit
+                }
+              >
+                {correctingBenefit
+                  ? "Salvando..."
+                  : "Confirmar correção"}
+              </button>
+
+              {correctionSuccess && (
+                <small>
+                  Benefício corrigido com sucesso.
+                </small>
+              )}
+            </article>
             </article>
           </div>
 
