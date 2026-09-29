@@ -70,6 +70,7 @@ class DocumentResponse(BaseModel):
     pages_without_text: list[int] = Field(default_factory=list)
     benefit_type: str | None = None
     benefit_confidence: float | None = None
+    dados_cliente: ClientDataResponse | None = None
 
 class BenefitCorrectionRequest(BaseModel):
     benefit_type: str

@@ -183,6 +183,7 @@ export type DocumentResponse = {
   pages_without_text: number[];
   benefit_type: string | null;
   benefit_confidence: number | null;
+  dados_cliente: ClientData | null;
 };
 
 export async function uploadDocument(

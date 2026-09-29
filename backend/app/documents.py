@@ -113,6 +113,7 @@ async def upload_document(
         "pages_without_text": list(reading.pages_without_text),
         "benefit_type": benefit_identification.benefit_type,
         "benefit_confidence": benefit_identification.confidence,
+        "dados_cliente": client_data,
     }
 
 @router.patch("/{document_id}/benefit")
