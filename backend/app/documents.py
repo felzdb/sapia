@@ -18,6 +18,7 @@ from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import BenefitCorrectionRequest, DocumentResponse
 from .storage import get_upload_directory
 from .benefit_identifier import BENEFIT_TYPES, identify_benefit
+from .gemini_service import analyze_document_text
 
 
 router = APIRouter(
@@ -75,9 +76,28 @@ async def upload_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
-    benefit_identification = identify_benefit(reading.text)
+    try:
+        ai_analysis = analyze_document_text(reading.text)
 
-    client_data = extract_client_data(reading.text)
+        if ai_analysis.benefit_type not in BENEFIT_TYPES:
+            raise ValueError(
+                "Tipo de benefício retornado pela IA é inválido."
+            )
+
+        benefit_type = ai_analysis.benefit_type
+        benefit_confidence = ai_analysis.benefit_confidence
+        client_data = ai_analysis.dados_cliente.model_dump()
+
+    except Exception:
+        fallback_benefit = identify_benefit(
+            reading.text
+        )
+
+        benefit_type = fallback_benefit.benefit_type
+        benefit_confidence = fallback_benefit.confidence
+        client_data = extract_client_data(
+            reading.text
+        )
 
     document = Document(
         user_id=current_user.id,
@@ -88,9 +108,9 @@ async def upload_document(
         status="PROCESSADO",
         extracted_text=reading.text,
         page_count=reading.page_count,
-        benefit_type=benefit_identification.benefit_type,
-        benefit_confidence=benefit_identification.confidence,
-        benefit_original_type=benefit_identification.benefit_type,
+        benefit_type=benefit_type,
+        benefit_confidence=benefit_confidence,
+        benefit_original_type=benefit_type,
     )
 
     try:
@@ -111,8 +131,8 @@ async def upload_document(
         "extracted_text": document.extracted_text,
         "page_count": document.page_count,
         "pages_without_text": list(reading.pages_without_text),
-        "benefit_type": benefit_identification.benefit_type,
-        "benefit_confidence": benefit_identification.confidence,
+        "benefit_type": document.benefit_type,
+        "benefit_confidence": document.benefit_confidence,
         "dados_cliente": client_data,
     }
 
