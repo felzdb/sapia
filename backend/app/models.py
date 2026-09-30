@@ -115,3 +115,35 @@ class Document(Base):
         default=datetime.utcnow,
         nullable=False
     )
+
+class Petition(Base):
+    __tablename__ = "peticao"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("documento.id"),
+        unique=True,
+        nullable=False,
+    )
+
+    content: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="GERADA",
+        nullable=False,
+    )
+
+    generated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )

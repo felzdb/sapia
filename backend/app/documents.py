@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import uuid4
 
 from fastapi import (
@@ -13,12 +14,18 @@ from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
 from .client_data import extract_client_data
-from .models import Document, User
+from .models import Document, Petition, User
 from .pdf_reader import PDFReadError, read_pdf_document
-from .schemas import BenefitCorrectionRequest, DocumentResponse
+from .schemas import (
+    BenefitCorrectionRequest,
+    DocumentResponse,
+    PetitionGenerationRequest,
+    PetitionResponse,
+)
 from .storage import get_upload_directory
 from .benefit_identifier import BENEFIT_TYPES, identify_benefit
 from .gemini_service import analyze_document_text
+from .petition_generator import generate_petition_text
 
 
 router = APIRouter(
@@ -175,3 +182,66 @@ def correct_document_benefit(
         "benefit_confidence": document.benefit_confidence,
         "benefit_corrected_manually": document.benefit_corrected_manually,
     }
+
+@router.post(
+    "/{document_id}/petition",
+    response_model=PetitionResponse,
+)
+def generate_document_petition(
+    document_id: int,
+    payload: PetitionGenerationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    document = db.scalar(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+        )
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Documento não encontrado.",
+        )
+
+    if (
+        not document.benefit_type
+        or document.benefit_type == "NAO_IDENTIFICADO"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Confirme o tipo de benefício antes "
+                "de gerar a petição."
+            ),
+        )
+
+    content = generate_petition_text(
+        document.benefit_type,
+        payload.dados_cliente,
+    )
+
+    petition = db.scalar(
+        select(Petition).where(
+            Petition.document_id == document.id
+        )
+    )
+
+    if petition is None:
+        petition = Petition(
+            document_id=document.id,
+            content=content,
+            status="GERADA",
+        )
+        db.add(petition)
+    else:
+        petition.content = content
+        petition.status = "GERADA"
+        petition.generated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(petition)
+
+    return petition

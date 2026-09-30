@@ -72,5 +72,17 @@ class DocumentResponse(BaseModel):
     benefit_confidence: float | None = None
     dados_cliente: ClientDataResponse | None = None
 
+class PetitionGenerationRequest(BaseModel):
+    dados_cliente: ClientDataResponse
+
+class PetitionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    document_id: int
+    content: str
+    status: str
+    generated_at: datetime
+
 class BenefitCorrectionRequest(BaseModel):
     benefit_type: str
