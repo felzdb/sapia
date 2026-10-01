@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
     CheckCircle2,
     FileClock,
@@ -23,6 +25,16 @@ export default function Home({
     token,
     onLogout,
 }: HomeProps) {
+
+    const [processedDocuments, setProcessedDocuments] =
+    useState(0);
+
+    const [processingDocuments, setProcessingDocuments] =
+    useState(0);
+
+    const [generatedPetitions, setGeneratedPetitions] =
+    useState(0);
+
     async function handleLogout() {
         await logout(token);
         onLogout();
@@ -54,7 +66,7 @@ export default function Home({
                         </div>
                         <div>
                             <span>Documentos processados</span>
-                            <strong>0</strong>
+                            <strong>{processedDocuments}</strong>
                         </div>
                     </article>
 
@@ -64,7 +76,7 @@ export default function Home({
                         </div>
                         <div>
                             <span>Em processamento</span>
-                            <strong>0</strong>
+                            <strong>{processingDocuments}</strong>
                         </div>
                     </article>
 
@@ -74,7 +86,7 @@ export default function Home({
                         </div>
                         <div>
                             <span>Petições geradas</span>
-                            <strong>0</strong>
+                            <strong>{generatedPetitions}</strong>
                         </div>
                     </article>
                 </section>
@@ -90,7 +102,18 @@ export default function Home({
                         </div>
                     </div>
 
-                    <UploadArea token={token} />
+                    <UploadArea
+                        token={token}
+                        onProcessingChange={(processing) =>
+                            setProcessingDocuments(processing ? 1 : 0)
+                        }
+                        onDocumentProcessed={() =>
+                            setProcessedDocuments((current) => current + 1)
+                        }
+                        onPetitionGenerated={() =>
+                            setGeneratedPetitions((current) => current + 1)
+                        }
+                    />
 
                     <div className="flow-steps">
                         <div className="flow-step active">

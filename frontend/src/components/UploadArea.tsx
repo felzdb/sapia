@@ -24,6 +24,9 @@ import {
 
 type UploadAreaProps = {
   token: string;
+  onProcessingChange: (processing: boolean) => void;
+  onDocumentProcessed: () => void;
+  onPetitionGenerated: () => void;
 };
 
 const benefitLabels: Record<string, string> = {
@@ -44,6 +47,9 @@ const benefitLabels: Record<string, string> = {
 
 export default function UploadArea({
   token,
+  onProcessingChange,
+  onDocumentProcessed,
+  onPetitionGenerated,
 }: UploadAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -100,6 +106,7 @@ export default function UploadArea({
     }
 
     setUploading(true);
+    onProcessingChange(true);
 
     try {
       const result =
@@ -109,6 +116,7 @@ export default function UploadArea({
         );
 
       setDocument(result);
+      onDocumentProcessed();
 
     } catch (err) {
       setError(
@@ -119,6 +127,7 @@ export default function UploadArea({
 
     } finally {
       setUploading(false);
+      onProcessingChange(false);
     }
   }
 
@@ -177,6 +186,7 @@ export default function UploadArea({
     );
 
     setPetition(result);
+    onPetitionGenerated();
 
   } catch (err) {
     setError(
