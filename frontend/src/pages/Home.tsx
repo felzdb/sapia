@@ -85,8 +85,7 @@ export default function Home({
                             <span className="eyebrow">Nova análise</span>
                             <h2>Enviar documento do INSS</h2>
                             <p>
-                                Nesta primeira versão, o componente visual já está pronto. O
-                                endpoint de upload será conectado na próxima etapa.
+                                Envie um documento do INSS para análise automática e conferência dos dados extraídos.
                             </p>
                         </div>
                     </div>
