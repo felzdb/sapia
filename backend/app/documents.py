@@ -245,3 +245,44 @@ def generate_document_petition(
     db.refresh(petition)
 
     return petition
+
+@router.patch(
+    "/{document_id}/petition/finalize",
+    response_model=PetitionResponse,
+)
+def finalize_document_petition(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    document = db.scalar(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+        )
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Documento não encontrado.",
+        )
+
+    petition = db.scalar(
+        select(Petition).where(
+            Petition.document_id == document.id
+        )
+    )
+
+    if petition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Petição não encontrada.",
+        )
+
+    petition.status = "FINALIZADA"
+
+    db.commit()
+    db.refresh(petition)
+
+    return petition

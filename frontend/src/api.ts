@@ -285,3 +285,26 @@ export async function generatePetition(
 
   return response.json();
 }
+
+export async function finalizePetition(
+  token: string,
+  documentId: number
+): Promise<PetitionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/petition/finalize`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}

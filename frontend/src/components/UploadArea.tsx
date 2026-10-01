@@ -14,6 +14,7 @@ import {
 
 import {
   correctDocumentBenefit,
+  finalizePetition,
   generatePetition,
   uploadDocument,
   type DocumentResponse,
@@ -66,6 +67,9 @@ export default function UploadArea({
 
   const [generatingPetition, setGeneratingPetition] =
     useState(false);
+
+  const [finalizingPetition, setFinalizingPetition] =
+  useState(false);
 
   const [petition, setPetition] =
     useState<PetitionResponse | null>(null);
@@ -178,6 +182,34 @@ export default function UploadArea({
 
   } finally {
     setGeneratingPetition(false);
+  }
+}
+
+async function handleFinalizePetition() {
+  if (!document || !petition) {
+    return;
+  }
+
+  setError("");
+  setFinalizingPetition(true);
+
+  try {
+    const result = await finalizePetition(
+      token,
+      document.id
+    );
+
+    setPetition(result);
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Não foi possível finalizar a petição."
+    );
+
+  } finally {
+    setFinalizingPetition(false);
   }
 }
 
@@ -451,6 +483,23 @@ export default function UploadArea({
                 <pre>
                   {petition.content}
                 </pre>
+
+                {petition.status !== "FINALIZADA" ? (
+                  <button
+                    className="primary-button petition-finalize-button"
+                    type="button"
+                    onClick={handleFinalizePetition}
+                    disabled={finalizingPetition}
+                  >
+                    {finalizingPetition
+                      ? "Finalizando petição..."
+                      : "Finalizar petição"}
+                  </button>
+                ) : (
+                  <p className="petition-finalized-message">
+                    Petição finalizada com sucesso.
+                  </p>
+                )}
               </div>
             )}
           </section>
