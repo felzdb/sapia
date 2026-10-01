@@ -902,3 +902,11 @@ input:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.petition-generate-button:disabled {
+  cursor: not-allowed;
+}
+
+.petition-generate-button[aria-busy="true"] {
+  cursor: wait;
+}

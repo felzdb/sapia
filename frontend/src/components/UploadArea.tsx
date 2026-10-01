@@ -71,6 +71,9 @@ export default function UploadArea({
   const [finalizingPetition, setFinalizingPetition] =
   useState(false);
 
+  const [dataConfirmed, setDataConfirmed] =
+  useState(false);
+
   const [petition, setPetition] =
     useState<PetitionResponse | null>(null);
 
@@ -78,6 +81,7 @@ export default function UploadArea({
     setError("");
     setDocument(null);
     setPetition(null);
+    setDataConfirmed(false);
 
     if (file.type !== "application/pdf") {
       setError(
@@ -142,6 +146,7 @@ export default function UploadArea({
 
       setCorrectionSuccess(true);
       setPetition(null);
+      setDataConfirmed(false);
 
     } catch (err) {
       setError(
@@ -460,12 +465,28 @@ async function handleFinalizePetition() {
               </div>
             </div>
 
+          <label className="petition-confirmation">
+            <input
+              type="checkbox"
+              checked={dataConfirmed}
+              onChange={(event) =>
+                setDataConfirmed(event.target.checked)
+              }
+            />
+
+            <span>
+              Confirmo que conferi os dados acima.
+            </span>
+          </label>
+
             <button
               className="primary-button petition-generate-button"
               type="button"
+              aria-busy={generatingPetition}
               onClick={handleGeneratePetition}
               disabled={
                 generatingPetition ||
+                !dataConfirmed ||
                 !document.dados_cliente ||
                 !document.benefit_type ||
                 document.benefit_type === "NAO_IDENTIFICADO"
