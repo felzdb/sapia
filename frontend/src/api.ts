@@ -249,3 +249,39 @@ export async function correctDocumentBenefit(
 
   return response.json();
 }
+
+export type PetitionResponse = {
+  id: number;
+  document_id: number;
+  content: string;
+  status: string;
+  generated_at: string;
+};
+
+export async function generatePetition(
+  token: string,
+  documentId: number,
+  clientData: ClientData
+): Promise<PetitionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/petition`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dados_cliente: clientData,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}

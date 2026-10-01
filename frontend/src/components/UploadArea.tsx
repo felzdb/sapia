@@ -14,8 +14,10 @@ import {
 
 import {
   correctDocumentBenefit,
+  generatePetition,
   uploadDocument,
   type DocumentResponse,
+  type PetitionResponse,
 } from "../api";
 
 
@@ -62,10 +64,16 @@ export default function UploadArea({
   const [correctionSuccess, setCorrectionSuccess] =
     useState(false);
 
+  const [generatingPetition, setGeneratingPetition] =
+    useState(false);
+
+  const [petition, setPetition] =
+    useState<PetitionResponse | null>(null);
 
   async function sendFile(file: File) {
     setError("");
     setDocument(null);
+    setPetition(null);
 
     if (file.type !== "application/pdf") {
       setError(
@@ -129,6 +137,7 @@ export default function UploadArea({
       });
 
       setCorrectionSuccess(true);
+      setPetition(null);
 
     } catch (err) {
       setError(
@@ -142,6 +151,35 @@ export default function UploadArea({
     }
   }
 
+  async function handleGeneratePetition() {
+  if (!document || !document.dados_cliente) {
+    return;
+  }
+
+  setError("");
+  setPetition(null);
+  setGeneratingPetition(true);
+
+  try {
+    const result = await generatePetition(
+      token,
+      document.id,
+      document.dados_cliente
+    );
+
+    setPetition(result);
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Não foi possível gerar a petição."
+    );
+
+  } finally {
+    setGeneratingPetition(false);
+  }
+}
 
   function handleDrop(
     event: DragEvent<HTMLButtonElement>
@@ -376,6 +414,45 @@ export default function UploadArea({
             </article>
             </article>
           </div>
+
+          <section className="petition-generation">
+            <div className="extracted-content-heading">
+              <FileText size={20} />
+
+              <div>
+                <h3>Petição inicial</h3>
+                <span>
+                  Gere a petição com os dados conferidos acima.
+                </span>
+              </div>
+            </div>
+
+            <button
+              className="primary-button petition-generate-button"
+              type="button"
+              onClick={handleGeneratePetition}
+              disabled={
+                generatingPetition ||
+                !document.dados_cliente ||
+                !document.benefit_type ||
+                document.benefit_type === "NAO_IDENTIFICADO"
+              }
+            >
+              {generatingPetition
+                ? "Gerando petição..."
+                : "Gerar petição"}
+            </button>
+
+            {petition && (
+              <div className="petition-preview">
+                <h3>Pré-visualização da petição</h3>
+
+                <pre>
+                  {petition.content}
+                </pre>
+              </div>
+            )}
+          </section>
 
           <div className="extracted-content">
             <div className="extracted-content-heading">

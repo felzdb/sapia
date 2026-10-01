@@ -800,6 +800,58 @@ input:focus {
   font-weight: normal;
 }
 
+.petition-generation {
+  padding: 18px;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.petition-generation .extracted-content-heading {
+  margin-bottom: 16px;
+}
+
+.petition-generation .extracted-content-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.petition-generation .extracted-content-heading span {
+  color: #737d91;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.petition-generate-button {
+  width: 100%;
+}
+
+.petition-preview {
+  margin-top: 16px;
+}
+
+.petition-preview h3 {
+  margin: 0 0 10px;
+  color: #263b77;
+  font-size: 16px;
+}
+
+.petition-preview pre {
+  max-height: 520px;
+  margin: 0;
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid #e2e6ee;
+  border-radius: 6px;
+  background: #f8f9fc;
+  color: #283044;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .client-data-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
