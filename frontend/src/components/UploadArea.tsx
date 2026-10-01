@@ -369,7 +369,9 @@ export default function UploadArea({
                   ? benefitLabels[document.benefit_type] ?? document.benefit_type
                   : "Não identificado"}
               </strong>
-                          <article className="document-summary-card">
+              </article>
+
+              <article className="document-summary-card">
               <ScanText size={20} />
               <span>Corrigir benefício</span>
 
@@ -411,7 +413,6 @@ export default function UploadArea({
                   Benefício corrigido com sucesso.
                 </small>
               )}
-            </article>
             </article>
           </div>
 
