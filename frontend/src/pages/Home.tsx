@@ -35,6 +35,15 @@ export default function Home({
     const [generatedPetitions, setGeneratedPetitions] =
     useState(0);
 
+    const flowStep =
+    generatedPetitions > 0
+        ? 4
+        : processedDocuments > 0
+          ? 3
+          : processingDocuments > 0
+            ? 2
+            : 1;
+
     async function handleLogout() {
         await logout(token);
         onLogout();
@@ -116,7 +125,7 @@ export default function Home({
                     />
 
                     <div className="flow-steps">
-                        <div className="flow-step active">
+                        <div className={`flow-step ${flowStep > 1 ? "completed" : "active"}`}>
                             <span>01</span>
                             <div>
                                 <strong>Enviar PDF</strong>
@@ -124,7 +133,15 @@ export default function Home({
                             </div>
                         </div>
                         <div className="flow-line" />
-                        <div className="flow-step">
+                        <div
+                            className={`flow-step ${
+                                flowStep > 2
+                                    ? "completed"
+                                    : flowStep === 2
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
                             <span>02</span>
                             <div>
                                 <strong>Analisar</strong>
@@ -132,7 +149,15 @@ export default function Home({
                             </div>
                         </div>
                         <div className="flow-line" />
-                        <div className="flow-step">
+                        <div
+                            className={`flow-step ${
+                                flowStep > 3
+                                    ? "completed"
+                                    : flowStep === 3
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
                             <span>03</span>
                             <div>
                                 <strong>Conferir</strong>
@@ -140,7 +165,11 @@ export default function Home({
                             </div>
                         </div>
                         <div className="flow-line" />
-                        <div className="flow-step">
+                        <div
+                            className={`flow-step ${
+                                flowStep === 4 ? "completed" : ""
+                            }`}
+                        >
                             <span>04</span>
                             <div>
                                 <strong>Gerar</strong>

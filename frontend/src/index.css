@@ -537,6 +537,16 @@ input:focus {
   color: white;
 }
 
+.flow-step.completed > span {
+  background: #2f7d4a;
+  border-color: #2f7d4a;
+  color: white;
+}
+
+.flow-step.completed strong {
+  color: #2f7d4a;
+}
+
 .flow-line {
   flex: 1;
   height: 1px;
@@ -557,6 +567,16 @@ input:focus {
   height: 50px;
   background: #263b77;
   color: white;
+}
+
+.petition-finalized-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #b7dfc2;
+  border-radius: 6px;
+  background: #eefaf1;
+  color: #2f7d4a;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
@@ -860,6 +880,28 @@ input:focus {
   overflow-wrap: anywhere;
 }
 
+.petition-confirmation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.petition-confirmation input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.client-data-grid .field-error {
+  display: block;
+  margin-top: 5px;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .client-data-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -885,6 +927,33 @@ input:focus {
   overflow-wrap: anywhere;
   color: #263b77;
   font-size: 14px;
+}
+
+.client-data-grid input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #d7ddea;
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #263b77;
+  font: inherit;
+  font-size: 14px;
+}
+
+.client-data-grid input:focus {
+  outline: 2px solid #c9d4f0;
+  border-color: #405b9a;
+}
+
+.client-data-grid input:placeholder-shown {
+  border-color: #d9b54a;
+  background: #fff9e8;
+}
+
+.client-data-grid input::placeholder {
+  color: #8a6d1d;
 }
 
 .client-data-note {

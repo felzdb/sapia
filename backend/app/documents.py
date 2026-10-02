@@ -36,6 +36,25 @@ router = APIRouter(
 
 MAX_FILE_SIZE = 20 * 1024 * 1024
 
+def is_valid_cpf(value: str) -> bool:
+    cpf = "".join(char for char in value if char.isdigit())
+
+    if len(cpf) != 11 or cpf == cpf[0] * 11:
+        return False
+
+    def calculate_digit(length: int) -> int:
+        total = sum(
+            int(cpf[i]) * (length + 1 - i)
+            for i in range(length)
+        )
+
+        remainder = (total * 10) % 11
+        return 0 if remainder == 10 else remainder
+
+    return (
+        calculate_digit(9) == int(cpf[9])
+        and calculate_digit(10) == int(cpf[10])
+    )
 
 @router.post(
     "/upload",
@@ -216,6 +235,31 @@ def generate_document_petition(
                 "Confirme o tipo de benefício antes "
                 "de gerar a petição."
             ),
+        )
+
+    dados = payload.dados_cliente
+
+    if (
+        not dados.nome
+        or not dados.cpf
+        or not dados.data_nascimento
+        or not dados.nit_pis
+        or not dados.numero_beneficio
+        or not dados.data_inicio_beneficio
+        or not dados.competencias
+        or not dados.valor_beneficio
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Preencha todos os dados obrigatórios antes de gerar a petição.",
+        )
+
+    cpf = payload.dados_cliente.cpf
+
+    if not cpf or not is_valid_cpf(cpf):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CPF inválido. Verifique os dígitos informados.",
         )
 
     content = generate_petition_text(
