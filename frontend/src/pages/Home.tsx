@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
     CheckCircle2,
     FileClock,
@@ -23,6 +25,25 @@ export default function Home({
     token,
     onLogout,
 }: HomeProps) {
+
+    const [processedDocuments, setProcessedDocuments] =
+    useState(0);
+
+    const [processingDocuments, setProcessingDocuments] =
+    useState(0);
+
+    const [generatedPetitions, setGeneratedPetitions] =
+    useState(0);
+
+    const flowStep =
+    generatedPetitions > 0
+        ? 4
+        : processedDocuments > 0
+          ? 3
+          : processingDocuments > 0
+            ? 2
+            : 1;
+
     async function handleLogout() {
         await logout(token);
         onLogout();
@@ -54,7 +75,7 @@ export default function Home({
                         </div>
                         <div>
                             <span>Documentos processados</span>
-                            <strong>0</strong>
+                            <strong>{processedDocuments}</strong>
                         </div>
                     </article>
 
@@ -64,7 +85,7 @@ export default function Home({
                         </div>
                         <div>
                             <span>Em processamento</span>
-                            <strong>0</strong>
+                            <strong>{processingDocuments}</strong>
                         </div>
                     </article>
 
@@ -74,7 +95,7 @@ export default function Home({
                         </div>
                         <div>
                             <span>Petições geradas</span>
-                            <strong>0</strong>
+                            <strong>{generatedPetitions}</strong>
                         </div>
                     </article>
                 </section>
@@ -85,16 +106,26 @@ export default function Home({
                             <span className="eyebrow">Nova análise</span>
                             <h2>Enviar documento do INSS</h2>
                             <p>
-                                Nesta primeira versão, o componente visual já está pronto. O
-                                endpoint de upload será conectado na próxima etapa.
+                                Envie um documento do INSS para análise automática e conferência dos dados extraídos.
                             </p>
                         </div>
                     </div>
 
-                    <UploadArea token={token} />
+                    <UploadArea
+                        token={token}
+                        onProcessingChange={(processing) =>
+                            setProcessingDocuments(processing ? 1 : 0)
+                        }
+                        onDocumentProcessed={() =>
+                            setProcessedDocuments((current) => current + 1)
+                        }
+                        onPetitionGenerated={() =>
+                            setGeneratedPetitions((current) => current + 1)
+                        }
+                    />
 
                     <div className="flow-steps">
-                        <div className="flow-step active">
+                        <div className={`flow-step ${flowStep > 1 ? "completed" : "active"}`}>
                             <span>01</span>
                             <div>
                                 <strong>Enviar PDF</strong>
@@ -102,7 +133,15 @@ export default function Home({
                             </div>
                         </div>
                         <div className="flow-line" />
-                        <div className="flow-step">
+                        <div
+                            className={`flow-step ${
+                                flowStep > 2
+                                    ? "completed"
+                                    : flowStep === 2
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
                             <span>02</span>
                             <div>
                                 <strong>Analisar</strong>
@@ -110,7 +149,15 @@ export default function Home({
                             </div>
                         </div>
                         <div className="flow-line" />
-                        <div className="flow-step">
+                        <div
+                            className={`flow-step ${
+                                flowStep > 3
+                                    ? "completed"
+                                    : flowStep === 3
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
                             <span>03</span>
                             <div>
                                 <strong>Conferir</strong>
@@ -118,7 +165,11 @@ export default function Home({
                             </div>
                         </div>
                         <div className="flow-line" />
-                        <div className="flow-step">
+                        <div
+                            className={`flow-step ${
+                                flowStep === 4 ? "completed" : ""
+                            }`}
+                        >
                             <span>04</span>
                             <div>
                                 <strong>Gerar</strong>

@@ -537,6 +537,16 @@ input:focus {
   color: white;
 }
 
+.flow-step.completed > span {
+  background: #2f7d4a;
+  border-color: #2f7d4a;
+  color: white;
+}
+
+.flow-step.completed strong {
+  color: #2f7d4a;
+}
+
 .flow-line {
   flex: 1;
   height: 1px;
@@ -557,6 +567,16 @@ input:focus {
   height: 50px;
   background: #263b77;
   color: white;
+}
+
+.petition-finalized-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #b7dfc2;
+  border-radius: 6px;
+  background: #eefaf1;
+  color: #2f7d4a;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
@@ -718,6 +738,14 @@ input:focus {
   font-size: 15px;
 }
 
+.document-summary-card select,
+.document-summary-card button {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .extracted-content {
   padding: 18px;
   border: 1px solid #dfe4ee;
@@ -800,6 +828,80 @@ input:focus {
   font-weight: normal;
 }
 
+.petition-generation {
+  padding: 18px;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.petition-generation .extracted-content-heading {
+  margin-bottom: 16px;
+}
+
+.petition-generation .extracted-content-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.petition-generation .extracted-content-heading span {
+  color: #737d91;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.petition-generate-button {
+  width: 100%;
+}
+
+.petition-preview {
+  margin-top: 16px;
+}
+
+.petition-preview h3 {
+  margin: 0 0 10px;
+  color: #263b77;
+  font-size: 16px;
+}
+
+.petition-preview pre {
+  max-height: 520px;
+  margin: 0;
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid #e2e6ee;
+  border-radius: 6px;
+  background: #f8f9fc;
+  color: #283044;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.petition-confirmation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.petition-confirmation input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.client-data-grid .field-error {
+  display: block;
+  margin-top: 5px;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .client-data-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -827,6 +929,33 @@ input:focus {
   font-size: 14px;
 }
 
+.client-data-grid input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #d7ddea;
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #263b77;
+  font: inherit;
+  font-size: 14px;
+}
+
+.client-data-grid input:focus {
+  outline: 2px solid #c9d4f0;
+  border-color: #405b9a;
+}
+
+.client-data-grid input:placeholder-shown {
+  border-color: #d9b54a;
+  background: #fff9e8;
+}
+
+.client-data-grid input::placeholder {
+  color: #8a6d1d;
+}
+
 .client-data-note {
   margin: 14px 0 0;
   padding: 10px 12px;
@@ -841,4 +970,12 @@ input:focus {
   .client-data-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.petition-generate-button:disabled {
+  cursor: not-allowed;
+}
+
+.petition-generate-button[aria-busy="true"] {
+  cursor: wait;
 }

@@ -14,13 +14,20 @@ import {
 
 import {
   correctDocumentBenefit,
+  finalizePetition,
+  generatePetition,
   uploadDocument,
+  type ClientData,
   type DocumentResponse,
+  type PetitionResponse,
 } from "../api";
 
 
 type UploadAreaProps = {
   token: string;
+  onProcessingChange: (processing: boolean) => void;
+  onDocumentProcessed: () => void;
+  onPetitionGenerated: () => void;
 };
 
 const benefitLabels: Record<string, string> = {
@@ -41,6 +48,9 @@ const benefitLabels: Record<string, string> = {
 
 export default function UploadArea({
   token,
+  onProcessingChange,
+  onDocumentProcessed,
+  onPetitionGenerated,
 }: UploadAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -53,8 +63,11 @@ export default function UploadArea({
   const [document, setDocument] =
     useState<DocumentResponse | null>(null);
 
-      const [selectedBenefit, setSelectedBenefit] =
-    useState("");
+  const [clientData, setClientData] =
+  useState<ClientData | null>(null);
+
+    const [selectedBenefit, setSelectedBenefit] =
+  useState("");
 
   const [correctingBenefit, setCorrectingBenefit] =
     useState(false);
@@ -62,10 +75,40 @@ export default function UploadArea({
   const [correctionSuccess, setCorrectionSuccess] =
     useState(false);
 
+  const [generatingPetition, setGeneratingPetition] =
+    useState(false);
+
+  const [finalizingPetition, setFinalizingPetition] =
+  useState(false);
+
+  const [dataConfirmed, setDataConfirmed] =
+  useState(false);
+
+  const [petition, setPetition] =
+    useState<PetitionResponse | null>(null);
+
+  const hasMissingClientData =
+  !!clientData &&
+  (
+    !clientData.nome ||
+    !clientData.cpf ||
+    !clientData.data_nascimento ||
+    !clientData.nit_pis ||
+    !clientData.numero_beneficio ||
+    !clientData.data_inicio_beneficio ||
+    clientData.competencias.length === 0 ||
+    !clientData.valor_beneficio
+  );
+
+  const hasInvalidCpf =
+  !!clientData?.cpf && !isValidCpf(clientData.cpf);
 
   async function sendFile(file: File) {
     setError("");
     setDocument(null);
+    setClientData(null);
+    setPetition(null);
+    setDataConfirmed(false);
 
     if (file.type !== "application/pdf") {
       setError(
@@ -84,6 +127,7 @@ export default function UploadArea({
     }
 
     setUploading(true);
+    onProcessingChange(true);
 
     try {
       const result =
@@ -93,6 +137,8 @@ export default function UploadArea({
         );
 
       setDocument(result);
+      setClientData(result.dados_cliente);
+      onDocumentProcessed();
 
     } catch (err) {
       setError(
@@ -103,8 +149,98 @@ export default function UploadArea({
 
     } finally {
       setUploading(false);
+      onProcessingChange(false);
     }
   }
+
+    function updateClientData<K extends keyof ClientData>(
+    field: K,
+    value: ClientData[K]
+  ) {
+    setClientData((current) =>
+      current
+        ? {
+            ...current,
+            [field]: value,
+          }
+        : current
+    );
+
+    setDataConfirmed(false);
+    setPetition(null);
+  }
+
+    function formatDateInput(value: string) {
+    const digits = value
+      .replace(/\D/g, "")
+      .slice(0, 8);
+
+    if (digits.length <= 2) {
+      return digits;
+    }
+
+    if (digits.length <= 4) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+
+  function formatMonthYearInput(value: string) {
+  const digits = value
+    .replace(/\D/g, "")
+    .slice(0, 6);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+
+  function formatCpfInput(value: string) {
+  const digits = value
+    .replace(/\D/g, "")
+    .slice(0, 11);
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  }
+
+  if (digits.length <= 9) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  }
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+  function isValidCpf(value: string) {
+  const cpf = value.replace(/\D/g, "");
+
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+    return false;
+  }
+
+  const calculateDigit = (length: number) => {
+    let sum = 0;
+
+    for (let i = 0; i < length; i++) {
+      sum += Number(cpf[i]) * (length + 1 - i);
+    }
+
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+
+  return (
+    calculateDigit(9) === Number(cpf[9]) &&
+    calculateDigit(10) === Number(cpf[10])
+  );
+}
 
     async function handleBenefitCorrection() {
     if (!document || !selectedBenefit) {
@@ -129,6 +265,8 @@ export default function UploadArea({
       });
 
       setCorrectionSuccess(true);
+      setPetition(null);
+      setDataConfirmed(false);
 
     } catch (err) {
       setError(
@@ -142,6 +280,64 @@ export default function UploadArea({
     }
   }
 
+  async function handleGeneratePetition() {
+  if (!document || !clientData) {
+    return;
+  }
+
+  setError("");
+  setPetition(null);
+  setGeneratingPetition(true);
+
+  try {
+    const result = await generatePetition(
+      token,
+      document.id,
+      clientData
+    );
+
+    setPetition(result);
+    onPetitionGenerated();
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Não foi possível gerar a petição."
+    );
+
+  } finally {
+    setGeneratingPetition(false);
+  }
+}
+
+async function handleFinalizePetition() {
+  if (!document || !petition) {
+    return;
+  }
+
+  setError("");
+  setFinalizingPetition(true);
+
+  try {
+    const result = await finalizePetition(
+      token,
+      document.id
+    );
+
+    setPetition(result);
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Não foi possível finalizar a petição."
+    );
+
+  } finally {
+    setFinalizingPetition(false);
+  }
+}
 
   function handleDrop(
     event: DragEvent<HTMLButtonElement>
@@ -228,7 +424,7 @@ export default function UploadArea({
             </div>
           </div>
 
-          {document.dados_cliente && (
+          {clientData && (
             <section className="client-data-card">
               <div className="extracted-content-heading">
                 <FileText size={20} />
@@ -241,52 +437,147 @@ export default function UploadArea({
               <div className="client-data-grid">
                 <article>
                   <span>Nome completo</span>
-                  <strong>{document.dados_cliente.nome ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.nome ?? ""}
+                    placeholder="Não identificado"
+                    onChange={(event) =>
+                      updateClientData(
+                        "nome",
+                        event.target.value || null
+                      )
+                    }
+                  />
                 </article>
 
                 <article>
                   <span>CPF</span>
-                  <strong>{document.dados_cliente.cpf ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.cpf ?? ""}
+                    placeholder="Não identificado"
+                    onChange={(event) =>
+                      updateClientData(
+                        "cpf",
+                        formatCpfInput(event.target.value) || null
+                      )
+                    }
+                  />
+
+                  {hasInvalidCpf && (
+                    <span className="field-error">
+                      CPF inválido. Verifique os dígitos informados.
+                    </span>
+                  )}
                 </article>
 
                 <article>
                   <span>Data de nascimento</span>
-                  <strong>{document.dados_cliente.data_nascimento ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.data_nascimento ?? ""}
+                    placeholder="DD/MM/AAAA"
+                    onChange={(event) =>
+                      updateClientData(
+                        "data_nascimento",
+                        formatDateInput(event.target.value) || null
+                      )
+                    }
+                  />
                 </article>
 
                 <article>
                   <span>NIT/PIS</span>
-                  <strong>{document.dados_cliente.nit_pis ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.nit_pis ?? ""}
+                    placeholder="Não identificado"
+                    onChange={(event) =>
+                      updateClientData(
+                        "nit_pis",
+                        event.target.value || null
+                      )
+                    }
+                  />
                 </article>
 
                 <article>
                   <span>Número do benefício</span>
-                  <strong>{document.dados_cliente.numero_beneficio ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.numero_beneficio ?? ""}
+                    placeholder="Não identificado"
+                    onChange={(event) =>
+                      updateClientData(
+                        "numero_beneficio",
+                        event.target.value || null
+                      )
+                    }
+                  />
                 </article>
 
                 <article>
                   <span>Data de início do benefício (DIB)</span>
-                  <strong>{document.dados_cliente.data_inicio_beneficio ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.data_inicio_beneficio ?? ""}
+                    placeholder="DD/MM/AAAA"
+                    onChange={(event) =>
+                      updateClientData(
+                        "data_inicio_beneficio",
+                        formatDateInput(event.target.value) || null
+                      )
+                    }
+                  />
                 </article>
 
                 <article>
                   <span>Competências</span>
-                  <strong>
-                    {document.dados_cliente.competencias.length > 0
-                      ? document.dados_cliente.competencias.join(", ")
-                      : "Não identificadas"}
-                  </strong>
+
+                  <input
+                    type="text"
+                    value={clientData.competencias.join(", ")}
+                    placeholder="MM/AAAA"
+                    onChange={(event) =>
+                      updateClientData(
+                        "competencias",
+                        event.target.value
+                          .split(",")
+                          .map((item) => formatMonthYearInput(item.trim()))
+                          .filter(Boolean)
+                      )
+                    }
+                  />
                 </article>
 
                 <article>
                   <span>Valor do benefício</span>
-                  <strong>{document.dados_cliente.valor_beneficio ?? "Não identificado"}</strong>
+
+                  <input
+                    type="text"
+                    value={clientData.valor_beneficio ?? ""}
+                    placeholder="Não identificado"
+                    onChange={(event) =>
+                      updateClientData(
+                        "valor_beneficio",
+                        event.target.value || null
+                      )
+                    }
+                  />
                 </article>
               </div>
 
-              <p className="client-data-note">
-                Campos não identificados devem ser conferidos e preenchidos manualmente antes de prosseguir.
-              </p>
+              {hasMissingClientData && (
+                <p className="client-data-note">
+                  Campos não identificados devem ser conferidos e preenchidos manualmente antes de prosseguir.
+                </p>
+              )}
             </section>
           )}
 
@@ -331,7 +622,9 @@ export default function UploadArea({
                   ? benefitLabels[document.benefit_type] ?? document.benefit_type
                   : "Não identificado"}
               </strong>
-                          <article className="document-summary-card">
+              </article>
+
+              <article className="document-summary-card">
               <ScanText size={20} />
               <span>Corrigir benefício</span>
 
@@ -374,8 +667,80 @@ export default function UploadArea({
                 </small>
               )}
             </article>
-            </article>
           </div>
+
+          <section className="petition-generation">
+            <div className="extracted-content-heading">
+              <FileText size={20} />
+
+              <div>
+                <h3>Petição inicial</h3>
+                <span>
+                  Gere a petição com os dados conferidos acima.
+                </span>
+              </div>
+            </div>
+
+          <label className="petition-confirmation">
+            <input
+              type="checkbox"
+              checked={dataConfirmed}
+              disabled={hasMissingClientData || hasInvalidCpf}
+              onChange={(event) =>
+                setDataConfirmed(event.target.checked)
+              }
+            />
+
+            <span>
+              Confirmo que conferi os dados acima.
+            </span>
+          </label>
+
+            <button
+              className="primary-button petition-generate-button"
+              type="button"
+              aria-busy={generatingPetition}
+              onClick={handleGeneratePetition}
+              disabled={
+                generatingPetition ||
+                !dataConfirmed ||
+                !document.dados_cliente ||
+                !document.benefit_type ||
+                document.benefit_type === "NAO_IDENTIFICADO"
+              }
+            >
+              {generatingPetition
+                ? "Gerando petição..."
+                : "Gerar petição"}
+            </button>
+
+            {petition && (
+              <div className="petition-preview">
+                <h3>Pré-visualização da petição</h3>
+
+                <pre>
+                  {petition.content}
+                </pre>
+
+                {petition.status !== "FINALIZADA" ? (
+                  <button
+                    className="primary-button petition-finalize-button"
+                    type="button"
+                    onClick={handleFinalizePetition}
+                    disabled={finalizingPetition}
+                  >
+                    {finalizingPetition
+                      ? "Finalizando petição..."
+                      : "Finalizar petição"}
+                  </button>
+                ) : (
+                  <p className="petition-finalized-message">
+                    Petição finalizada com sucesso.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
 
           <div className="extracted-content">
             <div className="extracted-content-heading">
