@@ -415,8 +415,12 @@ async function handleFinalizePetition() {
 
             <div>
               <strong>
-                Documento processado
+                Documento processado com sucesso!
               </strong>
+
+              <span>
+                Verifique os dados extraídos.
+              </span>
 
               <span>
                 {document.original_filename}
@@ -575,7 +579,7 @@ async function handleFinalizePetition() {
 
               {hasMissingClientData && (
                 <p className="client-data-note">
-                  Campos não identificados devem ser conferidos e preenchidos manualmente antes de prosseguir.
+                  Alguns campos obrigatórios não foram identificados. Complete-os manualmente antes de prosseguir.
                 </p>
               )}
             </section>
@@ -669,6 +673,25 @@ async function handleFinalizePetition() {
             </article>
           </div>
 
+          <details className="extracted-content extracted-content-details">
+            <summary className="extracted-content-toggle">
+              <FileText size={20} />
+              <span>Ver texto extraído do documento</span>
+            </summary>
+
+            <pre>
+              {document.extracted_text?.trim()
+                || "Nenhum texto foi encontrado neste documento."}
+            </pre>
+
+            {document.pages_without_text.length > 0 && (
+              <p className="ocr-warning">
+                As páginas indicadas não possuem camada de texto e
+                poderão precisar de processamento por OCR.
+              </p>
+            )}
+          </details>
+
           <section className="petition-generation">
             <div className="extracted-content-heading">
               <FileText size={20} />
@@ -742,24 +765,6 @@ async function handleFinalizePetition() {
             )}
           </section>
 
-          <div className="extracted-content">
-            <div className="extracted-content-heading">
-              <FileText size={20} />
-              <h3>Conteúdo extraído</h3>
-            </div>
-
-            <pre>
-              {document.extracted_text?.trim()
-                || "Nenhum texto foi encontrado neste documento."}
-            </pre>
-
-            {document.pages_without_text.length > 0 && (
-              <p className="ocr-warning">
-                As páginas indicadas não possuem camada de texto e
-                poderão precisar de processamento por OCR.
-              </p>
-            )}
-          </div>
         </section>
       )}
     </>
