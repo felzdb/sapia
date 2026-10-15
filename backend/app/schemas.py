@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StrictBool
 
 
 class LoginRequest(BaseModel):
@@ -74,6 +74,7 @@ class DocumentResponse(BaseModel):
 
 class PetitionGenerationRequest(BaseModel):
     dados_cliente: ClientDataResponse
+    case_details: dict[str, StrictBool | None] = Field(default_factory=dict)
 
 class PetitionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -83,6 +84,9 @@ class PetitionResponse(BaseModel):
     content: str
     status: str
     generated_at: datetime
+
+    clauses: list[dict] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 class BenefitCorrectionRequest(BaseModel):
     benefit_type: str

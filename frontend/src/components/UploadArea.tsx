@@ -2,6 +2,7 @@ import {
   DragEvent,
   useRef,
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 import {
+  clauseRequest,
+  type ClauseOptions,
   correctDocumentBenefit,
   finalizePetition,
   generatePetition,
@@ -52,6 +55,12 @@ export default function UploadArea({
   onDocumentProcessed,
   onPetitionGenerated,
 }: UploadAreaProps) {
+  const [caseFields, setCaseFields] = useState<Record<string, string>>({});
+  const [caseDetails, setCaseDetails] = useState<Record<string, boolean | null>>({});
+  useEffect(() => {
+    clauseRequest<ClauseOptions>(token, "/options").then(o => setCaseFields(o.case_fields))
+      .catch(() => setError("Não foi possível carregar as particularidades do caso. Recarregue a página."));
+  }, [token]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] =
@@ -106,6 +115,7 @@ export default function UploadArea({
   async function sendFile(file: File) {
     setError("");
     setDocument(null);
+    setCaseDetails({});
     setClientData(null);
     setPetition(null);
     setDataConfirmed(false);
@@ -293,7 +303,8 @@ export default function UploadArea({
     const result = await generatePetition(
       token,
       document.id,
-      clientData
+      clientData,
+      caseDetails
     );
 
     setPetition(result);
@@ -704,6 +715,15 @@ async function handleFinalizePetition() {
               </div>
             </div>
 
+          <fieldset className="case-details"><legend>Particularidades do caso</legend>
+            <p>Confirme cada informação. Uma condição não informada impede a inclusão das cláusulas que dependem dela.</p>
+            {Object.entries(caseFields).map(([key, label]) => <label key={key}>{label}
+              <select value={caseDetails[key] == null ? "" : String(caseDetails[key])} disabled={generatingPetition || finalizingPetition}
+                onChange={e => {setCaseDetails({...caseDetails, [key]: e.target.value === "" ? null : e.target.value === "true"});setPetition(null);setDataConfirmed(false);}}>
+                <option value="">Não informado</option><option value="true">Sim</option><option value="false">Não</option>
+              </select>
+            </label>)}
+          </fieldset>
           <label className="petition-confirmation">
             <input
               type="checkbox"
@@ -741,6 +761,8 @@ async function handleFinalizePetition() {
               <div className="petition-preview">
                 <h3>Pré-visualização da petição</h3>
 
+                {petition.warnings.map((warning, i) => <p role="status" key={i}>{warning}</p>)}
+                <p>Cláusulas incluídas: {petition.clauses.map(c => `${c.title} (v${c.version})`).join(", ") || "nenhuma"}</p>
                 <pre>
                   {petition.content}
                 </pre>

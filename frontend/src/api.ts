@@ -256,12 +256,15 @@ export type PetitionResponse = {
   content: string;
   status: string;
   generated_at: string;
+  clauses: (Clause & {rendered_text: string})[];
+  warnings: string[];
 };
 
 export async function generatePetition(
   token: string,
   documentId: number,
-  clientData: ClientData
+  clientData: ClientData,
+  caseDetails: Record<string, boolean | null> = {}
 ): Promise<PetitionResponse> {
   const response = await fetch(
     `${API_URL}/documents/${documentId}/petition`,
@@ -273,6 +276,7 @@ export async function generatePetition(
       },
       body: JSON.stringify({
         dados_cliente: clientData,
+        case_details: caseDetails,
       }),
     }
   );
@@ -307,4 +311,21 @@ export async function finalizePetition(
   }
 
   return response.json();
+}
+
+export type Clause = {
+  id: number; active: boolean; version: number; title: string; text: string;
+  section: string; benefit_types: string[]; conditions: Record<string, boolean>;
+  display_order: number; created_at: string;
+};
+export type ClauseOptions = {
+  benefit_types: string[]; case_fields: Record<string, string>; sections: string[]; placeholders: string[];
+};
+export async function clauseRequest<T>(token: string, path = "", method = "GET", body?: unknown): Promise<T> {
+  const response = await fetch(`${API_URL}/clauses${path}`, {
+    method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return response.status === 204 ? undefined as T : response.json();
 }

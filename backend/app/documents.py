@@ -26,6 +26,8 @@ from .storage import get_upload_directory
 from .benefit_identifier import BENEFIT_TYPES, identify_benefit
 from .gemini_service import analyze_document_text
 from .petition_generator import generate_petition_text
+from .clauses import CaseDetails, PetitionComposition, select_applicable, petition_response
+from pydantic import ValidationError
 
 
 router = APIRouter(
@@ -262,9 +264,15 @@ def generate_document_petition(
             detail="CPF inválido. Verifique os dígitos informados.",
         )
 
+    try:
+        details = CaseDetails.model_validate(payload.case_details).model_dump()
+    except ValidationError as exc:
+        raise HTTPException(422, "Particularidades do caso inválidas.") from exc
+    clauses, warnings = select_applicable(db, document.benefit_type, details, payload.dados_cliente)
     content = generate_petition_text(
         document.benefit_type,
         payload.dados_cliente,
+        clauses,
     )
 
     petition = db.scalar(
@@ -285,10 +293,13 @@ def generate_document_petition(
         petition.status = "GERADA"
         petition.generated_at = datetime.utcnow()
 
+    db.flush()
+    db.add(PetitionComposition(petition_id=petition.id, benefit_type=document.benefit_type,
+        case_details=details, clauses=clauses, warnings=warnings, content=content))
     db.commit()
     db.refresh(petition)
 
-    return petition
+    return petition_response(db, petition)
 
 @router.patch(
     "/{document_id}/petition/finalize",
@@ -329,4 +340,21 @@ def finalize_document_petition(
     db.commit()
     db.refresh(petition)
 
-    return petition
+    return petition_response(db, petition)
+
+
+@router.get("/{document_id}/petition/versions")
+def petition_versions(document_id: int, db: Session = Depends(get_db),
+                      current_user: User = Depends(get_current_user)):
+    document = db.scalar(select(Document).where(Document.id == document_id,
+                                                Document.user_id == current_user.id))
+    if document is None:
+        raise HTTPException(404, "Documento não encontrado.")
+    petition = db.scalar(select(Petition).where(Petition.document_id == document_id))
+    if petition is None:
+        raise HTTPException(404, "Petição não encontrada.")
+    rows = db.scalars(select(PetitionComposition).where(PetitionComposition.petition_id == petition.id)
+                      .order_by(PetitionComposition.id.desc())).all()
+    return [{"id": row.id, "created_at": row.created_at, "benefit_type": row.benefit_type,
+             "case_details": row.case_details, "clauses": row.clauses,
+             "warnings": row.warnings, "content": row.content} for row in rows]

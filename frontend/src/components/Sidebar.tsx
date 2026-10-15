@@ -10,11 +10,13 @@ import type { User } from "../api";
 type SidebarProps = {
     user: User;
     onLogout: () => void;
+    view: string;
+    onViewChange: (view: "upload" | "clauses") => void;
 };
 
 export default function Sidebar({
     user,
-    onLogout,
+    onLogout, view, onViewChange,
 }: SidebarProps) {
     return (
         <aside className="sidebar">
@@ -29,7 +31,7 @@ export default function Sidebar({
 
             <nav className="nav-list">
 
-                <button className="nav-item active">
+                <button className={`nav-item ${view === "upload" ? "active" : ""}`} onClick={() => onViewChange("upload")}>
                     <UploadCloud size={19} />
                     Enviar documento
                 </button>
@@ -39,6 +41,9 @@ export default function Sidebar({
                     Histórico
                 </button>
 
+                {user.role === "ADMINISTRADOR" && <button className={`nav-item ${view === "clauses" ? "active" : ""}`} onClick={() => onViewChange("clauses")}>
+                    <Scale size={19} /> Banco de cláusulas
+                </button>}
             </nav>
 
             <div className="sidebar-bottom">
