@@ -1018,3 +1018,74 @@ input:focus {
 .petition-generate-button[aria-busy="true"] {
   cursor: wait;
 }
+
+.clause-manager form, .case-details { display: grid; gap: 16px; margin: 20px 0; }
+.clause-manager label, .case-details label { display: grid; gap: 6px; font-weight: 500; }
+.clause-manager input:not([type="checkbox"]), .clause-manager select, .clause-manager textarea, .case-details select { width: 100%; padding: 10px; border: 1px solid #ccd3df; border-radius: 6px; font: inherit; background: white; }
+.clause-manager fieldset, .case-details { padding: 16px; border: 1px solid #ccd3df; border-radius: 8px; }
+.clause-manager .clause-check { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.clause-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.clause-record { border-top: 1px solid #dce1e9; margin-top: 20px; padding-top: 16px; }
+.clause-record pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.clause-record button { margin: 4px 10px 4px 0; padding: 8px 14px; cursor: pointer; }
+
+
+/* RF8: benefícios em bloco compacto e checkboxes ao lado dos nomes. */
+.clause-manager .benefits-fieldset {
+  width: 100%;
+  max-width: 600px;
+  min-width: 0;
+  padding: 10px 12px;
+  justify-self: start;
+  box-sizing: border-box;
+}
+
+.benefits-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 8px 16px;
+}
+
+.clause-manager .benefits-options .clause-check {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.clause-manager .benefits-options .clause-check input[type="checkbox"] {
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  flex: 0 0 16px;
+  margin: 1px 0 0;
+  padding: 0;
+  appearance: auto;
+  accent-color: #263b77;
+  cursor: pointer;
+}
+
+.clause-manager .benefits-options .clause-check input[type="checkbox"]:focus-visible {
+  outline: 2px solid #526db9;
+  outline-offset: 3px;
+}
+
+.clause-manager .benefits-options .clause-check span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.clause-help summary {
+  cursor: pointer;
+  color: #263b77;
+  font-weight: 600;
+}

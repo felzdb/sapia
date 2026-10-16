@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { logout, type User } from "../api";
+import ClauseManager from "../components/ClauseManager";
 import Sidebar from "../components/Sidebar";
 import UploadArea from "../components/UploadArea";
 
@@ -26,6 +27,7 @@ export default function Home({
     onLogout,
 }: HomeProps) {
 
+    const [view, setView] = useState<"upload" | "clauses">("upload");
     const [processedDocuments, setProcessedDocuments] =
     useState(0);
 
@@ -53,6 +55,8 @@ export default function Home({
         <div className="app-shell">
             <Sidebar
                 user={user}
+                view={view}
+                onViewChange={setView}
                 onLogout={handleLogout}
             />
             <main className="dashboard">
@@ -68,6 +72,7 @@ export default function Home({
                     </div>
                 </header>
 
+                {view === "clauses" && user.role === "ADMINISTRADOR" ? <ClauseManager token={token}/> : <>
                 <section className="metrics-grid">
                     <article className="metric-card">
                         <div className="metric-icon">
@@ -178,6 +183,7 @@ export default function Home({
                         </div>
                     </div>
                 </section>
+                </>}
             </main>
         </div>
     );

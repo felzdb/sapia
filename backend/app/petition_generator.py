@@ -198,6 +198,7 @@ BENEFIT_SECTIONS = {
 def generate_petition_text(
     benefit_type: str,
     client_data: ClientDataResponse,
+    clauses: list[dict] | None = None,
 ) -> str:
     benefit_name = BENEFIT_NAMES.get(
         benefit_type,
@@ -229,6 +230,10 @@ def generate_petition_text(
         or "[VALOR NÃO IDENTIFICADO]"
     )
 
+    clauses = clauses or []
+    def section_text(section):
+        return "\n\n".join(f'{c["title"]}\n{c["rendered_text"]}' for c in clauses if c["section"] == section)
+
     return f"""AO JUÍZO COMPETENTE
 
 {benefit_sections["titulo"]}
@@ -248,9 +253,13 @@ O requerente possui benefício identificado sob o nº
 {numero_beneficio}, com data de início em {dib} e valor informado
 de {valor}.
 
+{section_text("fatos")}
+
 DO DIREITO
 
 {benefit_sections["direito"]}
+
+{section_text("direito")}
 
 DOS PEDIDOS
 
@@ -260,6 +269,8 @@ Diante do exposto, requer:
 2. {benefit_sections["pedido"].rstrip(".")};
 3. A consideração dos documentos e informações apresentados;
 4. A adoção das providências cabíveis conforme o caso concreto.
+
+{section_text("pedidos")}
 
 DO VALOR DA CAUSA
 
