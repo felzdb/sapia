@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
 from .client_data import extract_client_data
+from .case_identifier import identify_case_details
 from .models import Document, Petition, User
 from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import (
@@ -162,6 +163,7 @@ async def upload_document(
         "benefit_type": document.benefit_type,
         "benefit_confidence": document.benefit_confidence,
         "dados_cliente": client_data,
+        "case_suggestions": identify_case_details(reading.text),
     }
 
 @router.patch("/{document_id}/benefit")
@@ -273,6 +275,7 @@ def generate_document_petition(
         document.benefit_type,
         payload.dados_cliente,
         clauses,
+        details,
     )
 
     petition = db.scalar(
@@ -358,3 +361,17 @@ def petition_versions(document_id: int, db: Session = Depends(get_db),
     return [{"id": row.id, "created_at": row.created_at, "benefit_type": row.benefit_type,
              "case_details": row.case_details, "clauses": row.clauses,
              "warnings": row.warnings, "content": row.content} for row in rows]
+
+
+@router.get("/{document_id}/case-suggestions")
+def document_case_suggestions(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    document = db.scalar(select(Document).where(
+        Document.id == document_id, Document.user_id == current_user.id,
+    ))
+    if document is None:
+        raise HTTPException(404, "Documento não encontrado.")
+    return identify_case_details(document.extracted_text or "")

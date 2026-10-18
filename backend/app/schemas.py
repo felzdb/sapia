@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StrictBool
 
 
@@ -57,6 +59,18 @@ class ClientDataResponse(BaseModel):
     valor_beneficio: str | None = None
 
 
+class CaseEvidence(BaseModel):
+    quote: str
+    page: int = Field(ge=1)
+
+
+class CaseSuggestion(BaseModel):
+    value: StrictBool | None = None
+    status: Literal["suggested", "not_found", "conflicting"] = "not_found"
+    reason: str
+    evidence: list[CaseEvidence] = Field(default_factory=list)
+
+
 class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,6 +85,7 @@ class DocumentResponse(BaseModel):
     benefit_type: str | None = None
     benefit_confidence: float | None = None
     dados_cliente: ClientDataResponse | None = None
+    case_suggestions: dict[str, CaseSuggestion] = Field(default_factory=dict)
 
 class PetitionGenerationRequest(BaseModel):
     dados_cliente: ClientDataResponse
@@ -87,6 +102,7 @@ class PetitionResponse(BaseModel):
 
     clauses: list[dict] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    case_details: dict[str, StrictBool | None] = Field(default_factory=dict)
 
 class BenefitCorrectionRequest(BaseModel):
     benefit_type: str

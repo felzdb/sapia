@@ -16,10 +16,10 @@ from .models import User, Petition
 from .schemas import ClientDataResponse
 
 CASE_FIELDS = {
-    "insalubridade": "Atividade insalubre confirmada",
-    "periculosidade": "Atividade perigosa confirmada",
-    "gratuidade": "Pedido de justiça gratuita confirmado",
-    "tutela_urgencia": "Pedido de tutela de urgência confirmado",
+    "insalubridade": "Atividade insalubre",
+    "periculosidade": "Atividade perigosa",
+    "gratuidade": "Pedido de justiça gratuita",
+    "tutela_urgencia": "Pedido de tutela de urgência",
 }
 SECTIONS = ("fatos", "direito", "pedidos")
 
@@ -122,6 +122,17 @@ def serialize(clause, version):
             "display_order": version.display_order, "created_at": version.created_at.isoformat()}
 
 
+@router.post("/demo-examples")
+def create_demo_examples(
+    db: Session = Depends(get_db),
+    user: User = Depends(admin),
+):
+    # Import local evita dependência circular com os modelos deste módulo.
+    from .demo_clauses import register_demo_clauses
+
+    return register_demo_clauses(db, user.id)
+
+
 @router.get("/options")
 def options(user: User = Depends(get_current_user)):
     return {"benefit_types": [b for b in BENEFIT_TYPES if b != "NAO_IDENTIFICADO"],
@@ -219,4 +230,6 @@ def petition_response(db: Session, petition: Petition):
                          .order_by(PetitionComposition.id.desc()))
     return {"id": petition.id, "document_id": petition.document_id, "content": petition.content,
             "status": petition.status, "generated_at": petition.generated_at,
-            "clauses": snapshot.clauses if snapshot else [], "warnings": snapshot.warnings if snapshot else []}
+            "clauses": snapshot.clauses if snapshot else [],
+            "warnings": snapshot.warnings if snapshot else [],
+            "case_details": snapshot.case_details if snapshot else {}}

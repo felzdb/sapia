@@ -1089,3 +1089,77 @@ input:focus {
   color: #263b77;
   font-weight: 600;
 }
+
+/* Resumo da geração: separa benefício, respostas e cláusulas condicionais. */
+.petition-summary {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0 20px;
+}
+
+.petition-summary-section {
+  min-width: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e6ee;
+}
+
+.petition-summary h4,
+.petition-summary h5 {
+  margin: 0 0 10px;
+  color: #172033;
+  font-size: 14px;
+}
+
+.petition-summary h5 {
+  margin-top: 16px;
+}
+
+.petition-summary ul {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.petition-summary li {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.petition-particulars-list {
+  display: grid;
+  gap: 8px;
+  max-width: 600px;
+  margin: 0;
+}
+
+.petition-particulars-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 12px;
+  align-items: start;
+}
+
+.petition-particulars-list dt {
+  font-weight: 500;
+}
+
+.petition-particulars-list dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .petition-particulars-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.case-suggestion { min-width: 0; }
+.case-evidence { margin-top: 8px; color: #59677d; font-size: 13px; line-height: 1.5; }
+.case-evidence p { margin: 4px 0; }
+.case-evidence-status { font-weight: 600; }
+.case-evidence-conflicting .case-evidence-status { color: #92520c; }
+.case-evidence summary, .petition-warnings summary { cursor: pointer; color: #263b77; }
+.case-evidence figure { margin: 10px 0; }
+.case-evidence blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cbd4e7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.case-evidence figcaption { margin-top: 4px; font-size: 12px; }
