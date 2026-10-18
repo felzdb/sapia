@@ -135,9 +135,9 @@ class RF8Tests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
         text = response.json()["content"]
         self.assertLess(text.index("DOS FATOS"),text.index("CONTEUDO_fatos"))
-        self.assertLess(text.index("CONTEUDO_fatos"),text.index("DO DIREITO"))
+        self.assertLess(text.index("CONTEUDO_direito"),text.index("DOS FATOS"))
         self.assertLess(text.index("DO DIREITO"),text.index("CONTEUDO_direito"))
-        self.assertLess(text.index("CONTEUDO_direito"),text.index("DOS PEDIDOS"))
+        self.assertLess(text.index("CONTEUDO_fatos"),text.index("DOS PEDIDOS"))
         self.assertLess(text.index("DOS PEDIDOS"),text.index("CONTEUDO_pedidos"))
         self.assertLess(text.index("CONTEUDO_pedidos"),text.index("DO VALOR DA CAUSA"))
 

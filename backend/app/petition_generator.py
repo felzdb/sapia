@@ -1,3 +1,5 @@
+import re
+
 from .schemas import ClientDataResponse
 
 
@@ -195,10 +197,17 @@ BENEFIT_SECTIONS = {
     },
 }
 
+def clause_display_title(title: str) -> str:
+    """Remove marcadores de apresentação sem alterar o título no cadastro."""
+    title = re.sub(r"^\s*(?:\[\s*DEMO(?:\s+RF8)?\s*\]\s*)+", "", title, flags=re.IGNORECASE)
+    return re.sub(r"(?:\s*\(v\d+\))+\s*$", "", title, flags=re.IGNORECASE).strip()
+
+
 def generate_petition_text(
     benefit_type: str,
     client_data: ClientDataResponse,
     clauses: list[dict] | None = None,
+    case_details: dict[str, bool | None] | None = None,
 ) -> str:
     benefit_name = BENEFIT_NAMES.get(
         benefit_type,
@@ -230,9 +239,24 @@ def generate_petition_text(
         or "[VALOR NÃO IDENTIFICADO]"
     )
 
+    details = case_details or {}
+    labels = {
+        "insalubridade": "Atividade insalubre",
+        "periculosidade": "Atividade perigosa",
+        "gratuidade": "Pedido de justiça gratuita",
+        "tutela_urgencia": "Pedido de tutela de urgência",
+    }
+    def answer(value):
+        return "Sim" if value is True else "Não" if value is False else "Não informado"
+
+    particulars_text = "\n".join(
+        f"{label}: {answer(details.get(key))}"
+        for key, label in labels.items()
+    )
+
     clauses = clauses or []
     def section_text(section):
-        return "\n\n".join(f'{c["title"]}\n{c["rendered_text"]}' for c in clauses if c["section"] == section)
+        return "\n\n".join(f'{clause_display_title(c["title"])}\n{c["rendered_text"]}' for c in clauses if c["section"] == section)
 
     return f"""AO JUÍZO COMPETENTE
 
@@ -245,6 +269,12 @@ QUALIFICAÇÃO
 vem apresentar a presente PETIÇÃO INICIAL referente ao benefício
 de {benefit_name}.
 
+DO DIREITO
+
+{benefit_sections["direito"]}
+
+{section_text("direito")}
+
 DOS FATOS
 
 {benefit_sections["fatos"]}
@@ -254,12 +284,6 @@ O requerente possui benefício identificado sob o nº
 de {valor}.
 
 {section_text("fatos")}
-
-DO DIREITO
-
-{benefit_sections["direito"]}
-
-{section_text("direito")}
 
 DOS PEDIDOS
 
@@ -271,6 +295,10 @@ Diante do exposto, requer:
 4. A adoção das providências cabíveis conforme o caso concreto.
 
 {section_text("pedidos")}
+
+PARTICULARIDADES DO CASO
+
+{particulars_text}
 
 DO VALOR DA CAUSA
 

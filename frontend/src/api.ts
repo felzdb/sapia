@@ -172,6 +172,13 @@ export type ClientData = {
   valor_beneficio: string | null;
 };
 
+export type CaseSuggestion = {
+  value: boolean | null;
+  status: "suggested" | "not_found" | "conflicting";
+  reason: string;
+  evidence: { quote: string; page: number }[];
+};
+
 export type DocumentResponse = {
   id: number;
   original_filename: string;
@@ -184,6 +191,7 @@ export type DocumentResponse = {
   benefit_type: string | null;
   benefit_confidence: number | null;
   dados_cliente: ClientData | null;
+  case_suggestions: Record<string, CaseSuggestion>;
 };
 
 export async function uploadDocument(
@@ -258,6 +266,7 @@ export type PetitionResponse = {
   generated_at: string;
   clauses: (Clause & {rendered_text: string})[];
   warnings: string[];
+  case_details: Record<string, boolean | null>;
 };
 
 export async function generatePetition(

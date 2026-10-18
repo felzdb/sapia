@@ -16,6 +16,7 @@ import {
 import {
   clauseRequest,
   type ClauseOptions,
+  type CaseSuggestion,
   correctDocumentBenefit,
   finalizePetition,
   generatePetition,
@@ -25,6 +26,13 @@ import {
   type PetitionResponse,
 } from "../api";
 
+
+import PetitionSummary from "./PetitionSummary";
+
+function formatWarning(message: string): string {
+  return message.replace(/\[\s*DEMO(?:\s+RF8)?\s*\]\s*/gi, "")
+    .replace(/\s*\(v\d+\)/gi, "").trim();
+}
 
 type UploadAreaProps = {
   token: string;
@@ -55,6 +63,8 @@ export default function UploadArea({
   onDocumentProcessed,
   onPetitionGenerated,
 }: UploadAreaProps) {
+  const [caseSuggestions, setCaseSuggestions] = useState<Record<string, CaseSuggestion>>({});
+  const [reviewedFields, setReviewedFields] = useState<Set<string>>(new Set());
   const [caseFields, setCaseFields] = useState<Record<string, string>>({});
   const [caseDetails, setCaseDetails] = useState<Record<string, boolean | null>>({});
   useEffect(() => {
@@ -116,6 +126,8 @@ export default function UploadArea({
     setError("");
     setDocument(null);
     setCaseDetails({});
+    setCaseSuggestions({});
+    setReviewedFields(new Set());
     setClientData(null);
     setPetition(null);
     setDataConfirmed(false);
@@ -147,6 +159,11 @@ export default function UploadArea({
         );
 
       setDocument(result);
+      const suggestions = result.case_suggestions ?? {};
+      setCaseSuggestions(suggestions);
+      setCaseDetails(Object.fromEntries(
+        Object.entries(suggestions).map(([key, suggestion]) => [key, suggestion.value])
+      ));
       setClientData(result.dados_cliente);
       onDocumentProcessed();
 
@@ -715,14 +732,35 @@ async function handleFinalizePetition() {
               </div>
             </div>
 
-          <fieldset className="case-details"><legend>Particularidades do caso</legend>
-            <p>Confirme cada informação. Uma condição não informada impede a inclusão das cláusulas que dependem dela.</p>
-            {Object.entries(caseFields).map(([key, label]) => <label key={key}>{label}
-              <select value={caseDetails[key] == null ? "" : String(caseDetails[key])} disabled={generatingPetition || finalizingPetition}
-                onChange={e => {setCaseDetails({...caseDetails, [key]: e.target.value === "" ? null : e.target.value === "true"});setPetition(null);setDataConfirmed(false);}}>
-                <option value="">Não informado</option><option value="true">Sim</option><option value="false">Não</option>
-              </select>
-            </label>)}
+          <fieldset className="case-details">
+            <legend>Particularidades do caso</legend>
+            <p>
+              Confira os trechos e corrija o que for necessário.
+            </p>
+            {Object.entries(caseFields).map(([key, label]) => (
+              <div className="case-suggestion" key={key}>
+                <label>
+                  {label}
+                  <select
+                    value={caseDetails[key] == null ? "" : String(caseDetails[key])}
+                    disabled={generatingPetition || finalizingPetition}
+                    onChange={(event) => {
+                      setCaseDetails({
+                        ...caseDetails,
+                        [key]: event.target.value === "" ? null : event.target.value === "true",
+                      });
+                      setReviewedFields((current) => new Set([...current, key]));
+                      setPetition(null);
+                      setDataConfirmed(false);
+                    }}
+                  >
+                    <option value="">Não informado</option>
+                    <option value="true">Sim</option>
+                    <option value="false">Não</option>
+                  </select>
+                </label>
+              </div>
+            ))}
           </fieldset>
           <label className="petition-confirmation">
             <input
@@ -735,7 +773,7 @@ async function handleFinalizePetition() {
             />
 
             <span>
-              Confirmo que conferi os dados acima.
+              Confirmo que conferi os dados.
             </span>
           </label>
 
@@ -760,9 +798,7 @@ async function handleFinalizePetition() {
             {petition && (
               <div className="petition-preview">
                 <h3>Pré-visualização da petição</h3>
-
-                {petition.warnings.map((warning, i) => <p role="status" key={i}>{warning}</p>)}
-                <p>Cláusulas incluídas: {petition.clauses.map(c => `${c.title} (v${c.version})`).join(", ") || "nenhuma"}</p>
+                <PetitionSummary petition={petition} />
                 <pre>
                   {petition.content}
                 </pre>

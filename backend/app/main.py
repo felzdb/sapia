@@ -65,6 +65,20 @@ def seed_demo_user() -> None:
         db.commit()
 
 
+def seed_default_clauses() -> None:
+    """Disponibiliza exemplos para todos os benefícios sem apagar cadastros."""
+    from .demo_clauses import register_demo_clauses
+
+    with SessionLocal() as db:
+        administrator = db.scalar(
+            select(User).where(
+                User.role == "ADMINISTRADOR", User.status == "ATIVO"
+            ).order_by(User.id)
+        )
+        if administrator is not None:
+            register_demo_clauses(db, administrator.id)
+
+
 def password_is_strong(password: str) -> bool:
     return (
         len(password) >= 8
@@ -82,6 +96,7 @@ async def lifespan(app: FastAPI):
     ensure_document_benefit_columns(engine)
     ensure_user_confirmed_at_column()
     seed_demo_user()
+    seed_default_clauses()
 
     yield
 
