@@ -122,6 +122,61 @@ export default function UploadArea({
   const hasInvalidCpf =
   !!clientData?.cpf && !isValidCpf(clientData.cpf);
 
+  const hasInvalidName =
+  !!clientData?.nome && !isValidName(clientData.nome);
+
+const hasInvalidBirthDate =
+  !!clientData?.data_nascimento &&
+  !isValidDate(clientData.data_nascimento);
+
+const hasFutureBirthDate =
+  !!clientData?.data_nascimento &&
+  isValidDate(clientData.data_nascimento) &&
+  isFutureDate(clientData.data_nascimento);
+
+const hasInvalidNitPis =
+  !!clientData?.nit_pis &&
+  !isValidNitPis(clientData.nit_pis);
+
+const hasInvalidBenefitNumber =
+  !!clientData?.numero_beneficio &&
+  !isValidBenefitNumber(clientData.numero_beneficio);
+
+const hasInvalidBenefitStartDate =
+  !!clientData?.data_inicio_beneficio &&
+  !isValidDate(clientData.data_inicio_beneficio);
+
+const hasBenefitStartBeforeBirth =
+  !!clientData?.data_inicio_beneficio &&
+  !!clientData?.data_nascimento &&
+  isValidDate(clientData.data_inicio_beneficio) &&
+  isValidDate(clientData.data_nascimento) &&
+  isDateBefore(
+    clientData.data_inicio_beneficio,
+    clientData.data_nascimento
+  );
+
+const hasInvalidCompetencias =
+  !!clientData &&
+  clientData.competencias.length > 0 &&
+  !clientData.competencias.every(isValidCompetencia);
+
+const hasInvalidBenefitValue =
+  !!clientData?.valor_beneficio &&
+  !isValidBenefitValue(clientData.valor_beneficio);
+
+const hasInvalidClientData =
+  hasInvalidCpf ||
+  hasInvalidName ||
+  hasInvalidBirthDate ||
+  hasFutureBirthDate ||
+  hasInvalidNitPis ||
+  hasInvalidBenefitNumber ||
+  hasInvalidBenefitStartDate ||
+  hasBenefitStartBeforeBirth ||
+  hasInvalidCompetencias ||
+  hasInvalidBenefitValue;
+
   async function sendFile(file: File) {
     setError("");
     setDocument(null);
@@ -267,6 +322,188 @@ export default function UploadArea({
     calculateDigit(9) === Number(cpf[9]) &&
     calculateDigit(10) === Number(cpf[10])
   );
+}
+
+function isValidName(value: string) {
+  const name = value.trim();
+
+  if (!name || !/^[\p{L}\s'’-]+$/u.test(name)) {
+    return false;
+  }
+
+  const letters = Array.from(name.toLocaleLowerCase()).filter((char) =>
+    /\p{L}/u.test(char)
+  );
+
+  if (letters.length === 0) {
+    return false;
+  }
+
+  if (letters.length >= 3 && new Set(letters).size === 1) {
+    return false;
+  }
+
+  return true;
+}
+
+function isValidDate(value: string) {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!match) {
+    return false;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+function parseDate(value: string) {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function isFutureDate(value: string) {
+  const date = parseDate(value);
+
+  if (!date) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return date > today;
+}
+
+function isDateBefore(value: string, referenceValue: string) {
+  const date = parseDate(value);
+  const referenceDate = parseDate(referenceValue);
+
+  if (!date || !referenceDate) {
+    return false;
+  }
+
+  return date < referenceDate;
+}
+
+function isValidCompetencia(value: string) {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{4})$/);
+
+  if (!match) {
+    return false;
+  }
+
+  const month = Number(match[1]);
+  const year = Number(match[2]);
+
+  return month >= 1 && month <= 12 && year > 0;
+}
+
+function isValidBenefitValue(value: string) {
+  const cleaned = value
+    .trim()
+    .replace("R$", "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .trim();
+
+  if (!cleaned) {
+    return false;
+  }
+
+  const amount = Number(cleaned);
+
+  return Number.isFinite(amount) && amount > 0;
+}
+
+function isValidNitPis(value: string) {
+  const identifier = value.trim();
+
+  if (!identifier || !/^[\d\s.-]+$/.test(identifier)) {
+    return false;
+  }
+
+  const digits = identifier.replace(/\D/g, "");
+
+  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+    return false;
+  }
+
+  const weights = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+  const total = weights.reduce(
+    (sum, weight, index) =>
+      sum + Number(digits[index]) * weight,
+    0
+  );
+
+  const remainder = total % 11;
+  let checkDigit = 11 - remainder;
+
+  if (checkDigit === 10 || checkDigit === 11) {
+    checkDigit = 0;
+  }
+
+  return checkDigit === Number(digits[10]);
+}
+
+function isValidBenefitNumber(value: string) {
+  const identifier = value.trim();
+
+  if (!identifier || !/^[\d\s.-]+$/.test(identifier)) {
+    return false;
+  }
+
+  const digits = identifier.replace(/\D/g, "");
+
+  if (digits.length !== 10 || /^(\d)\1{9}$/.test(digits)) {
+    return false;
+  }
+
+  const weights = [2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+  const total = weights.reduce(
+    (sum, weight, index) =>
+      sum + Number(digits[index]) * weight,
+    0
+  );
+
+  const remainder = total % 11;
+
+  const checkDigit =
+    remainder === 0 || remainder === 1
+      ? 0
+      : 11 - remainder;
+
+  return checkDigit === Number(digits[9]);
 }
 
     async function handleBenefitCorrection() {
@@ -481,6 +718,12 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidName && (
+                    <span className="field-error">
+                     Nome inválido. Use apenas letras, espaços, hífen ou apóstrofo e não informe apenas a mesma letra repetida.
+                    </span>
+                  )}
                 </article>
 
                 <article>
@@ -519,6 +762,18 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidBirthDate && (
+                    <span className="field-error">
+                      Data de nascimento inválida. Verifique a data informada.
+                    </span>
+                  )}
+
+                  {hasFutureBirthDate && (
+                    <span className="field-error">
+                      Data de nascimento inválida. A data de nascimento não pode estar no futuro.
+                    </span>
+                  )}
                 </article>
 
                 <article>
@@ -535,6 +790,12 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidNitPis && (
+                    <span className="field-error">
+                      NIT/PIS inválido. Confira os 11 dígitos e o dígito verificador. Pontos e hífen são opcionais.
+                    </span>
+                  )}
                 </article>
 
                 <article>
@@ -551,6 +812,12 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidBenefitNumber && (
+                    <span className="field-error">
+                      Número do benefício inválido. Confira os 10 dígitos e o dígito verificador. Pontos e hífen são opcionais.
+                    </span>
+                  )}
                 </article>
 
                 <article>
@@ -567,6 +834,18 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidBenefitStartDate && (
+                    <span className="field-error">
+                      Data de início do benefício inválida. Verifique a data informada.
+                    </span>
+                  )}
+
+                  {hasBenefitStartBeforeBirth && (
+                    <span className="field-error">
+                      Data de início do benefício inválida. A DIB não pode ser anterior à data de nascimento.
+                    </span>
+                  )}
                 </article>
 
                 <article>
@@ -586,6 +865,12 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidCompetencias && (
+                    <span className="field-error">
+                      Competência inválida. Use mês e ano válidos.
+                    </span>
+                  )}
                 </article>
 
                 <article>
@@ -602,6 +887,12 @@ async function handleFinalizePetition() {
                       )
                     }
                   />
+
+                  {hasInvalidBenefitValue && (
+                    <span className="field-error">
+                      Valor do benefício inválido. Informe um valor maior que zero.
+                    </span>
+                  )}
                 </article>
               </div>
 
@@ -766,7 +1057,7 @@ async function handleFinalizePetition() {
             <input
               type="checkbox"
               checked={dataConfirmed}
-              disabled={hasMissingClientData || hasInvalidCpf}
+              disabled={hasMissingClientData || hasInvalidClientData}
               onChange={(event) =>
                 setDataConfirmed(event.target.checked)
               }

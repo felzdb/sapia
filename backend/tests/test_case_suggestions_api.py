@@ -44,8 +44,8 @@ class CaseSuggestionAPITests(unittest.TestCase):
 
     def pdf(self,extra):
         text=("Nome do beneficiário: Cliente Exemplo\nCPF: 529.982.247-25\n"
-            "Data de nascimento: 22/7/1987\nNIT/PIS: 321.98765.43-2\n"
-            "Número do benefício: 987.654.321-0\n"
+            "Data de nascimento: 22/7/1987\nNIT/PIS: 321.98765.43-4\n"
+            "Número do benefício: 987.654.321-6\n"
             "Tipo de benefício: Auxílio por Incapacidade Temporária\n"
             "Data de início do benefício: 01/7/2026\nCompetências: 07/2026\n"
             "Valor do benefício: R$ 1.875,40\n"+extra)

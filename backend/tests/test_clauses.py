@@ -37,7 +37,7 @@ class RF8Tests(unittest.TestCase):
         self.base = {"title":"Cláusula de teste", "text":"Dados de ${nome}.", "section":"direito",
                      "benefit_types":["APOSENTADORIA_IDADE"], "conditions":{}, "display_order":10}
         self.data = {"nome":"Cliente Teste", "cpf":"529.982.247-25", "data_nascimento":"01/01/1960",
-                     "nit_pis":"123", "numero_beneficio":"123", "data_inicio_beneficio":"01/01/2020",
+                     "nit_pis":"123.45678.90-0", "numero_beneficio":"123.456.789-7", "data_inicio_beneficio":"01/01/2020",
                      "competencias":["01/2020"], "valor_beneficio":"R$ 1.000,00"}
 
     def tearDown(self):
@@ -135,9 +135,9 @@ class RF8Tests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
         text = response.json()["content"]
         self.assertLess(text.index("DOS FATOS"),text.index("CONTEUDO_fatos"))
-        self.assertLess(text.index("CONTEUDO_direito"),text.index("DOS FATOS"))
+        self.assertLess(text.index("CONTEUDO_fatos"),text.index("DO DIREITO"))
         self.assertLess(text.index("DO DIREITO"),text.index("CONTEUDO_direito"))
-        self.assertLess(text.index("CONTEUDO_fatos"),text.index("DOS PEDIDOS"))
+        self.assertLess(text.index("CONTEUDO_direito"),text.index("DOS PEDIDOS"))
         self.assertLess(text.index("DOS PEDIDOS"),text.index("CONTEUDO_pedidos"))
         self.assertLess(text.index("CONTEUDO_pedidos"),text.index("DO VALOR DA CAUSA"))
 

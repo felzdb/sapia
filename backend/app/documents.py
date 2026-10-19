@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
 from fastapi import (
@@ -58,6 +59,150 @@ def is_valid_cpf(value: str) -> bool:
         calculate_digit(9) == int(cpf[9])
         and calculate_digit(10) == int(cpf[10])
     )
+
+def is_valid_name(value: str) -> bool:
+    name = value.strip()
+    allowed_separators = {" ", "-", "'", "’"}
+
+    if not name or not all(
+        char.isalpha() or char in allowed_separators
+        for char in name
+    ):
+        return False
+
+    letters = [
+        char.casefold()
+        for char in name
+        if char.isalpha()
+    ]
+
+    if not letters:
+        return False
+
+    if len(letters) >= 3 and len(set(letters)) == 1:
+        return False
+
+    return True
+
+def is_valid_date(value: str) -> bool:
+    date_text = value.strip()
+
+    try:
+        datetime.strptime(date_text, "%d/%m/%Y")
+    except ValueError:
+        return False
+
+    return True
+
+def is_future_date(value: str) -> bool:
+    try:
+        parsed_date = datetime.strptime(value.strip(), "%d/%m/%Y").date()
+    except ValueError:
+        return False
+
+    return parsed_date > datetime.now().date()
+
+
+def is_date_before(value: str, reference_value: str) -> bool:
+    try:
+        date = datetime.strptime(value.strip(), "%d/%m/%Y").date()
+        reference_date = datetime.strptime(
+            reference_value.strip(),
+            "%d/%m/%Y",
+        ).date()
+    except ValueError:
+        return False
+
+    return date < reference_date
+
+def is_valid_competencia(value: str) -> bool:
+    competencia = value.strip()
+
+    try:
+        datetime.strptime(competencia, "%m/%Y")
+    except ValueError:
+        return False
+
+    return True
+
+def is_valid_benefit_value(value: str) -> bool:
+    amount = value.strip()
+
+    cleaned = (
+        amount.replace("R$", "")
+        .replace(".", "")
+        .replace(",", ".")
+        .strip()
+    )
+
+    try:
+        parsed_value = Decimal(cleaned)
+    except InvalidOperation:
+        return False
+
+    return parsed_value.is_finite() and parsed_value > 0
+
+def is_valid_nit_pis(value: str) -> bool:
+    identifier = value.strip()
+    allowed_separators = {" ", ".", "-"}
+
+    if not identifier or not all(
+        char.isdigit() or char in allowed_separators
+        for char in identifier
+    ):
+        return False
+
+    digits = "".join(char for char in identifier if char.isdigit())
+
+    if len(digits) != 11 or digits == digits[0] * 11:
+        return False
+
+    weights = (3, 2, 9, 8, 7, 6, 5, 4, 3, 2)
+
+    total = sum(
+        int(digits[index]) * weights[index]
+        for index in range(10)
+    )
+
+    remainder = total % 11
+    check_digit = 11 - remainder
+
+    if check_digit in (10, 11):
+        check_digit = 0
+
+    return check_digit == int(digits[10])
+
+
+def is_valid_benefit_number(value: str) -> bool:
+    identifier = value.strip()
+    allowed_separators = {" ", ".", "-"}
+
+    if not identifier or not all(
+        char.isdigit() or char in allowed_separators
+        for char in identifier
+    ):
+        return False
+
+    digits = "".join(char for char in identifier if char.isdigit())
+
+    if len(digits) != 10 or digits == digits[0] * 10:
+        return False
+
+    weights = (2, 9, 8, 7, 6, 5, 4, 3, 2)
+
+    total = sum(
+        int(digits[index]) * weights[index]
+        for index in range(9)
+    )
+
+    remainder = total % 11
+
+    if remainder in (0, 1):
+        check_digit = 0
+    else:
+        check_digit = 11 - remainder
+
+    return check_digit == int(digits[9])
 
 @router.post(
     "/upload",
@@ -264,6 +409,75 @@ def generate_document_petition(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CPF inválido. Verifique os dígitos informados.",
+        )
+
+    if not is_valid_name(dados.nome):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nome inválido. Use apenas letras, espaços, hífen ou apóstrofo e não informe apenas a mesma letra repetida.",
+        )
+
+    if not is_valid_date(dados.data_nascimento):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data de nascimento inválida. Verifique a data informada.",
+        )
+
+    if not is_valid_date(dados.data_inicio_beneficio):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data de início do benefício inválida. Verifique a data informada.",
+        )
+
+    if is_future_date(dados.data_nascimento):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Data de nascimento inválida. "
+                "A data de nascimento não pode estar no futuro."
+            ),
+        )
+
+    if is_date_before(
+        dados.data_inicio_beneficio,
+        dados.data_nascimento,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Data de início do benefício inválida. "
+                "A DIB não pode ser anterior à data de nascimento."
+            ),
+        )
+
+    if not all(is_valid_competencia(item) for item in dados.competencias):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Competência inválida. Use mês e ano válidos.",
+        )
+
+    if not is_valid_benefit_value(dados.valor_beneficio):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valor do benefício inválido. Informe um valor maior que zero.",
+        )
+
+    if not is_valid_nit_pis(dados.nit_pis):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "NIT/PIS inválido. Confira os 11 dígitos e o dígito verificador. "
+                "Pontos e hífen são opcionais."
+            ),
+        )
+
+    if not is_valid_benefit_number(dados.numero_beneficio):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Número do benefício inválido. Confira os 10 dígitos e o dígito verificador. "
+                "Pontos e hífen são opcionais."
+            ),
         )
 
     try:

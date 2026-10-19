@@ -30,7 +30,7 @@ class PetitionParticularsTests(unittest.TestCase):
         app.dependency_overrides[get_current_user]=lambda:self.user
         self.client=TestClient(app)
         self.data={"nome":"Cliente Exemplo", "cpf":"529.982.247-25", "data_nascimento":"01/01/1960",
-            "nit_pis":"123", "numero_beneficio":"123", "data_inicio_beneficio":"01/01/2020",
+            "nit_pis":"123.45678.90-0", "numero_beneficio":"123.456.789-7", "data_inicio_beneficio":"01/01/2020",
             "competencias":["01/2020"],"valor_beneficio":"R$ 1.000,00"}
 
     def tearDown(self):

@@ -269,12 +269,6 @@ QUALIFICAÇÃO
 vem apresentar a presente PETIÇÃO INICIAL referente ao benefício
 de {benefit_name}.
 
-DO DIREITO
-
-{benefit_sections["direito"]}
-
-{section_text("direito")}
-
 DOS FATOS
 
 {benefit_sections["fatos"]}
@@ -284,6 +278,12 @@ O requerente possui benefício identificado sob o nº
 de {valor}.
 
 {section_text("fatos")}
+
+DO DIREITO
+
+{benefit_sections["direito"]}
+
+{section_text("direito")}
 
 DOS PEDIDOS
 
