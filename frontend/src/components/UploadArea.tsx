@@ -18,6 +18,7 @@ import {
   type ClauseOptions,
   type CaseSuggestion,
   correctDocumentBenefit,
+  exportPetition,
   finalizePetition,
   generatePetition,
   uploadDocument,
@@ -83,10 +84,10 @@ export default function UploadArea({
     useState<DocumentResponse | null>(null);
 
   const [clientData, setClientData] =
-  useState<ClientData | null>(null);
+    useState<ClientData | null>(null);
 
-    const [selectedBenefit, setSelectedBenefit] =
-  useState("");
+  const [selectedBenefit, setSelectedBenefit] =
+    useState("");
 
   const [correctingBenefit, setCorrectingBenefit] =
     useState(false);
@@ -98,84 +99,95 @@ export default function UploadArea({
     useState(false);
 
   const [finalizingPetition, setFinalizingPetition] =
-  useState(false);
+    useState(false);
 
   const [dataConfirmed, setDataConfirmed] =
-  useState(false);
+    useState(false);
 
   const [petition, setPetition] =
     useState<PetitionResponse | null>(null);
 
+  const [exportingFormat, setExportingFormat] =
+    useState<"pdf" | "docx" | null>(null);
+
+  const [exportMessage, setExportMessage] = useState("");
+  const [exportError, setExportError] = useState("");
+
+  useEffect(() => {
+    setExportMessage("");
+    setExportError("");
+  }, [petition]);
+
   const hasMissingClientData =
-  !!clientData &&
-  (
-    !clientData.nome ||
-    !clientData.cpf ||
-    !clientData.data_nascimento ||
-    !clientData.nit_pis ||
-    !clientData.numero_beneficio ||
-    !clientData.data_inicio_beneficio ||
-    clientData.competencias.length === 0 ||
-    !clientData.valor_beneficio
-  );
+    !!clientData &&
+    (
+      !clientData.nome ||
+      !clientData.cpf ||
+      !clientData.data_nascimento ||
+      !clientData.nit_pis ||
+      !clientData.numero_beneficio ||
+      !clientData.data_inicio_beneficio ||
+      clientData.competencias.length === 0 ||
+      !clientData.valor_beneficio
+    );
 
   const hasInvalidCpf =
-  !!clientData?.cpf && !isValidCpf(clientData.cpf);
+    !!clientData?.cpf && !isValidCpf(clientData.cpf);
 
   const hasInvalidName =
-  !!clientData?.nome && !isValidName(clientData.nome);
+    !!clientData?.nome && !isValidName(clientData.nome);
 
-const hasInvalidBirthDate =
-  !!clientData?.data_nascimento &&
-  !isValidDate(clientData.data_nascimento);
+  const hasInvalidBirthDate =
+    !!clientData?.data_nascimento &&
+    !isValidDate(clientData.data_nascimento);
 
-const hasFutureBirthDate =
-  !!clientData?.data_nascimento &&
-  isValidDate(clientData.data_nascimento) &&
-  isFutureDate(clientData.data_nascimento);
+  const hasFutureBirthDate =
+    !!clientData?.data_nascimento &&
+    isValidDate(clientData.data_nascimento) &&
+    isFutureDate(clientData.data_nascimento);
 
-const hasInvalidNitPis =
-  !!clientData?.nit_pis &&
-  !isValidNitPis(clientData.nit_pis);
+  const hasInvalidNitPis =
+    !!clientData?.nit_pis &&
+    !isValidNitPis(clientData.nit_pis);
 
-const hasInvalidBenefitNumber =
-  !!clientData?.numero_beneficio &&
-  !isValidBenefitNumber(clientData.numero_beneficio);
+  const hasInvalidBenefitNumber =
+    !!clientData?.numero_beneficio &&
+    !isValidBenefitNumber(clientData.numero_beneficio);
 
-const hasInvalidBenefitStartDate =
-  !!clientData?.data_inicio_beneficio &&
-  !isValidDate(clientData.data_inicio_beneficio);
+  const hasInvalidBenefitStartDate =
+    !!clientData?.data_inicio_beneficio &&
+    !isValidDate(clientData.data_inicio_beneficio);
 
-const hasBenefitStartBeforeBirth =
-  !!clientData?.data_inicio_beneficio &&
-  !!clientData?.data_nascimento &&
-  isValidDate(clientData.data_inicio_beneficio) &&
-  isValidDate(clientData.data_nascimento) &&
-  isDateBefore(
-    clientData.data_inicio_beneficio,
-    clientData.data_nascimento
-  );
+  const hasBenefitStartBeforeBirth =
+    !!clientData?.data_inicio_beneficio &&
+    !!clientData?.data_nascimento &&
+    isValidDate(clientData.data_inicio_beneficio) &&
+    isValidDate(clientData.data_nascimento) &&
+    isDateBefore(
+      clientData.data_inicio_beneficio,
+      clientData.data_nascimento
+    );
 
-const hasInvalidCompetencias =
-  !!clientData &&
-  clientData.competencias.length > 0 &&
-  !clientData.competencias.every(isValidCompetencia);
+  const hasInvalidCompetencias =
+    !!clientData &&
+    clientData.competencias.length > 0 &&
+    !clientData.competencias.every(isValidCompetencia);
 
-const hasInvalidBenefitValue =
-  !!clientData?.valor_beneficio &&
-  !isValidBenefitValue(clientData.valor_beneficio);
+  const hasInvalidBenefitValue =
+    !!clientData?.valor_beneficio &&
+    !isValidBenefitValue(clientData.valor_beneficio);
 
-const hasInvalidClientData =
-  hasInvalidCpf ||
-  hasInvalidName ||
-  hasInvalidBirthDate ||
-  hasFutureBirthDate ||
-  hasInvalidNitPis ||
-  hasInvalidBenefitNumber ||
-  hasInvalidBenefitStartDate ||
-  hasBenefitStartBeforeBirth ||
-  hasInvalidCompetencias ||
-  hasInvalidBenefitValue;
+  const hasInvalidClientData =
+    hasInvalidCpf ||
+    hasInvalidName ||
+    hasInvalidBirthDate ||
+    hasFutureBirthDate ||
+    hasInvalidNitPis ||
+    hasInvalidBenefitNumber ||
+    hasInvalidBenefitStartDate ||
+    hasBenefitStartBeforeBirth ||
+    hasInvalidCompetencias ||
+    hasInvalidBenefitValue;
 
   async function sendFile(file: File) {
     setError("");
@@ -235,16 +247,16 @@ const hasInvalidClientData =
     }
   }
 
-    function updateClientData<K extends keyof ClientData>(
+  function updateClientData<K extends keyof ClientData>(
     field: K,
     value: ClientData[K]
   ) {
     setClientData((current) =>
       current
         ? {
-            ...current,
-            [field]: value,
-          }
+          ...current,
+          [field]: value,
+        }
         : current
     );
 
@@ -252,7 +264,7 @@ const hasInvalidClientData =
     setPetition(null);
   }
 
-    function formatDateInput(value: string) {
+  function formatDateInput(value: string) {
     const digits = value
       .replace(/\D/g, "")
       .slice(0, 8);
@@ -269,244 +281,244 @@ const hasInvalidClientData =
   }
 
   function formatMonthYearInput(value: string) {
-  const digits = value
-    .replace(/\D/g, "")
-    .slice(0, 6);
+    const digits = value
+      .replace(/\D/g, "")
+      .slice(0, 6);
 
-  if (digits.length <= 2) {
-    return digits;
-  }
+    if (digits.length <= 2) {
+      return digits;
+    }
 
     return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   }
 
   function formatCpfInput(value: string) {
-  const digits = value
-    .replace(/\D/g, "")
-    .slice(0, 11);
+    const digits = value
+      .replace(/\D/g, "")
+      .slice(0, 11);
 
-  if (digits.length <= 3) {
-    return digits;
-  }
-
-  if (digits.length <= 6) {
-    return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-  }
-
-  if (digits.length <= 9) {
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-  }
-
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-}
-
-  function isValidCpf(value: string) {
-  const cpf = value.replace(/\D/g, "");
-
-  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
-    return false;
-  }
-
-  const calculateDigit = (length: number) => {
-    let sum = 0;
-
-    for (let i = 0; i < length; i++) {
-      sum += Number(cpf[i]) * (length + 1 - i);
+    if (digits.length <= 3) {
+      return digits;
     }
 
-    const remainder = (sum * 10) % 11;
-    return remainder === 10 ? 0 : remainder;
-  };
+    if (digits.length <= 6) {
+      return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    }
 
-  return (
-    calculateDigit(9) === Number(cpf[9]) &&
-    calculateDigit(10) === Number(cpf[10])
-  );
-}
+    if (digits.length <= 9) {
+      return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    }
 
-function isValidName(value: string) {
-  const name = value.trim();
-
-  if (!name || !/^[\p{L}\s'’-]+$/u.test(name)) {
-    return false;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
   }
 
-  const letters = Array.from(name.toLocaleLowerCase()).filter((char) =>
-    /\p{L}/u.test(char)
-  );
+  function isValidCpf(value: string) {
+    const cpf = value.replace(/\D/g, "");
 
-  if (letters.length === 0) {
-    return false;
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+      return false;
+    }
+
+    const calculateDigit = (length: number) => {
+      let sum = 0;
+
+      for (let i = 0; i < length; i++) {
+        sum += Number(cpf[i]) * (length + 1 - i);
+      }
+
+      const remainder = (sum * 10) % 11;
+      return remainder === 10 ? 0 : remainder;
+    };
+
+    return (
+      calculateDigit(9) === Number(cpf[9]) &&
+      calculateDigit(10) === Number(cpf[10])
+    );
   }
 
-  if (letters.length >= 3 && new Set(letters).size === 1) {
-    return false;
+  function isValidName(value: string) {
+    const name = value.trim();
+
+    if (!name || !/^[\p{L}\s'’-]+$/u.test(name)) {
+      return false;
+    }
+
+    const letters = Array.from(name.toLocaleLowerCase()).filter((char) =>
+      /\p{L}/u.test(char)
+    );
+
+    if (letters.length === 0) {
+      return false;
+    }
+
+    if (letters.length >= 3 && new Set(letters).size === 1) {
+      return false;
+    }
+
+    return true;
   }
 
-  return true;
-}
+  function isValidDate(value: string) {
+    const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
 
-function isValidDate(value: string) {
-  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!match) {
+      return false;
+    }
 
-  if (!match) {
-    return false;
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+
+    const date = new Date(year, month - 1, day);
+
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    );
   }
 
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = Number(match[3]);
+  function parseDate(value: string) {
+    const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
 
-  const date = new Date(year, month - 1, day);
+    if (!match) {
+      return null;
+    }
 
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
-  );
-}
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
 
-function parseDate(value: string) {
-  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const date = new Date(year, month - 1, day);
 
-  if (!match) {
-    return null;
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return null;
+    }
+
+    return date;
   }
 
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = Number(match[3]);
+  function isFutureDate(value: string) {
+    const date = parseDate(value);
 
-  const date = new Date(year, month - 1, day);
+    if (!date) {
+      return false;
+    }
 
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return date > today;
   }
 
-  return date;
-}
+  function isDateBefore(value: string, referenceValue: string) {
+    const date = parseDate(value);
+    const referenceDate = parseDate(referenceValue);
 
-function isFutureDate(value: string) {
-  const date = parseDate(value);
+    if (!date || !referenceDate) {
+      return false;
+    }
 
-  if (!date) {
-    return false;
+    return date < referenceDate;
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  function isValidCompetencia(value: string) {
+    const match = value.trim().match(/^(\d{1,2})\/(\d{4})$/);
 
-  return date > today;
-}
+    if (!match) {
+      return false;
+    }
 
-function isDateBefore(value: string, referenceValue: string) {
-  const date = parseDate(value);
-  const referenceDate = parseDate(referenceValue);
+    const month = Number(match[1]);
+    const year = Number(match[2]);
 
-  if (!date || !referenceDate) {
-    return false;
+    return month >= 1 && month <= 12 && year > 0;
   }
 
-  return date < referenceDate;
-}
+  function isValidBenefitValue(value: string) {
+    const cleaned = value
+      .trim()
+      .replace("R$", "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+      .trim();
 
-function isValidCompetencia(value: string) {
-  const match = value.trim().match(/^(\d{1,2})\/(\d{4})$/);
+    if (!cleaned) {
+      return false;
+    }
 
-  if (!match) {
-    return false;
+    const amount = Number(cleaned);
+
+    return Number.isFinite(amount) && amount > 0;
   }
 
-  const month = Number(match[1]);
-  const year = Number(match[2]);
+  function isValidNitPis(value: string) {
+    const identifier = value.trim();
 
-  return month >= 1 && month <= 12 && year > 0;
-}
+    if (!identifier || !/^[\d\s.-]+$/.test(identifier)) {
+      return false;
+    }
 
-function isValidBenefitValue(value: string) {
-  const cleaned = value
-    .trim()
-    .replace("R$", "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .trim();
+    const digits = identifier.replace(/\D/g, "");
 
-  if (!cleaned) {
-    return false;
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+      return false;
+    }
+
+    const weights = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    const total = weights.reduce(
+      (sum, weight, index) =>
+        sum + Number(digits[index]) * weight,
+      0
+    );
+
+    const remainder = total % 11;
+    let checkDigit = 11 - remainder;
+
+    if (checkDigit === 10 || checkDigit === 11) {
+      checkDigit = 0;
+    }
+
+    return checkDigit === Number(digits[10]);
   }
 
-  const amount = Number(cleaned);
+  function isValidBenefitNumber(value: string) {
+    const identifier = value.trim();
 
-  return Number.isFinite(amount) && amount > 0;
-}
+    if (!identifier || !/^[\d\s.-]+$/.test(identifier)) {
+      return false;
+    }
 
-function isValidNitPis(value: string) {
-  const identifier = value.trim();
+    const digits = identifier.replace(/\D/g, "");
 
-  if (!identifier || !/^[\d\s.-]+$/.test(identifier)) {
-    return false;
+    if (digits.length !== 10 || /^(\d)\1{9}$/.test(digits)) {
+      return false;
+    }
+
+    const weights = [2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    const total = weights.reduce(
+      (sum, weight, index) =>
+        sum + Number(digits[index]) * weight,
+      0
+    );
+
+    const remainder = total % 11;
+
+    const checkDigit =
+      remainder === 0 || remainder === 1
+        ? 0
+        : 11 - remainder;
+
+    return checkDigit === Number(digits[9]);
   }
 
-  const digits = identifier.replace(/\D/g, "");
-
-  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
-    return false;
-  }
-
-  const weights = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-
-  const total = weights.reduce(
-    (sum, weight, index) =>
-      sum + Number(digits[index]) * weight,
-    0
-  );
-
-  const remainder = total % 11;
-  let checkDigit = 11 - remainder;
-
-  if (checkDigit === 10 || checkDigit === 11) {
-    checkDigit = 0;
-  }
-
-  return checkDigit === Number(digits[10]);
-}
-
-function isValidBenefitNumber(value: string) {
-  const identifier = value.trim();
-
-  if (!identifier || !/^[\d\s.-]+$/.test(identifier)) {
-    return false;
-  }
-
-  const digits = identifier.replace(/\D/g, "");
-
-  if (digits.length !== 10 || /^(\d)\1{9}$/.test(digits)) {
-    return false;
-  }
-
-  const weights = [2, 9, 8, 7, 6, 5, 4, 3, 2];
-
-  const total = weights.reduce(
-    (sum, weight, index) =>
-      sum + Number(digits[index]) * weight,
-    0
-  );
-
-  const remainder = total % 11;
-
-  const checkDigit =
-    remainder === 0 || remainder === 1
-      ? 0
-      : 11 - remainder;
-
-  return checkDigit === Number(digits[9]);
-}
-
-    async function handleBenefitCorrection() {
+  async function handleBenefitCorrection() {
     if (!document || !selectedBenefit) {
       return;
     }
@@ -545,64 +557,98 @@ function isValidBenefitNumber(value: string) {
   }
 
   async function handleGeneratePetition() {
-  if (!document || !clientData) {
-    return;
+    if (!document || !clientData) {
+      return;
+    }
+
+    setError("");
+    setPetition(null);
+    setGeneratingPetition(true);
+
+    try {
+      const result = await generatePetition(
+        token,
+        document.id,
+        clientData,
+        caseDetails
+      );
+
+      setPetition(result);
+      onPetitionGenerated();
+
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível gerar a petição."
+      );
+
+    } finally {
+      setGeneratingPetition(false);
+    }
   }
 
-  setError("");
-  setPetition(null);
-  setGeneratingPetition(true);
 
-  try {
-    const result = await generatePetition(
-      token,
-      document.id,
-      clientData,
-      caseDetails
-    );
+  async function handleExportPetition(
+    fileFormat: "pdf" | "docx"
+  ) {
+    if (!document || !petition || exportingFormat) {
+      return;
+    }
 
-    setPetition(result);
-    onPetitionGenerated();
+    setExportMessage("");
+    setExportError("");
+    setExportingFormat(fileFormat);
 
-  } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Não foi possível gerar a petição."
-    );
+    try {
+      await exportPetition(
+        token,
+        document.id,
+        fileFormat
+      );
 
-  } finally {
-    setGeneratingPetition(false);
+      setExportMessage(
+        "Documento exportado com sucesso! O download iniciará automaticamente."
+      );
+    } catch (err) {
+      setExportError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível exportar a petição."
+      );
+    } finally {
+      setExportingFormat(null);
+    }
   }
-}
 
-async function handleFinalizePetition() {
-  if (!document || !petition) {
-    return;
+
+  async function handleFinalizePetition() {
+    if (!document || !petition) {
+      return;
+    }
+
+    setError("");
+    setFinalizingPetition(true);
+
+    try {
+      const result = await finalizePetition(
+        token,
+        document.id
+      );
+
+      setPetition(result);
+
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível finalizar a petição."
+      );
+
+    } finally {
+      setFinalizingPetition(false);
+    }
   }
-
-  setError("");
-  setFinalizingPetition(true);
-
-  try {
-    const result = await finalizePetition(
-      token,
-      document.id
-    );
-
-    setPetition(result);
-
-  } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Não foi possível finalizar a petição."
-    );
-
-  } finally {
-    setFinalizingPetition(false);
-  }
-}
 
   function handleDrop(
     event: DragEvent<HTMLButtonElement>
@@ -721,7 +767,7 @@ async function handleFinalizePetition() {
 
                   {hasInvalidName && (
                     <span className="field-error">
-                     Nome inválido. Use apenas letras, espaços, hífen ou apóstrofo e não informe apenas a mesma letra repetida.
+                      Nome inválido. Use apenas letras, espaços, hífen ou apóstrofo e não informe apenas a mesma letra repetida.
                     </span>
                   )}
                 </article>
@@ -945,9 +991,9 @@ async function handleFinalizePetition() {
                   ? benefitLabels[document.benefit_type] ?? document.benefit_type
                   : "Não identificado"}
               </strong>
-              </article>
+            </article>
 
-              <article className="document-summary-card">
+            <article className="document-summary-card">
               <ScanText size={20} />
               <span>Corrigir benefício</span>
 
@@ -1023,50 +1069,50 @@ async function handleFinalizePetition() {
               </div>
             </div>
 
-          <fieldset className="case-details">
-            <legend>Particularidades do caso</legend>
-            <p>
-              Confira os trechos e corrija o que for necessário.
-            </p>
-            {Object.entries(caseFields).map(([key, label]) => (
-              <div className="case-suggestion" key={key}>
-                <label>
-                  {label}
-                  <select
-                    value={caseDetails[key] == null ? "" : String(caseDetails[key])}
-                    disabled={generatingPetition || finalizingPetition}
-                    onChange={(event) => {
-                      setCaseDetails({
-                        ...caseDetails,
-                        [key]: event.target.value === "" ? null : event.target.value === "true",
-                      });
-                      setReviewedFields((current) => new Set([...current, key]));
-                      setPetition(null);
-                      setDataConfirmed(false);
-                    }}
-                  >
-                    <option value="">Não informado</option>
-                    <option value="true">Sim</option>
-                    <option value="false">Não</option>
-                  </select>
-                </label>
-              </div>
-            ))}
-          </fieldset>
-          <label className="petition-confirmation">
-            <input
-              type="checkbox"
-              checked={dataConfirmed}
-              disabled={hasMissingClientData || hasInvalidClientData}
-              onChange={(event) =>
-                setDataConfirmed(event.target.checked)
-              }
-            />
+            <fieldset className="case-details">
+              <legend>Particularidades do caso</legend>
+              <p>
+                Confira os trechos e corrija o que for necessário.
+              </p>
+              {Object.entries(caseFields).map(([key, label]) => (
+                <div className="case-suggestion" key={key}>
+                  <label>
+                    {label}
+                    <select
+                      value={caseDetails[key] == null ? "" : String(caseDetails[key])}
+                      disabled={generatingPetition || finalizingPetition}
+                      onChange={(event) => {
+                        setCaseDetails({
+                          ...caseDetails,
+                          [key]: event.target.value === "" ? null : event.target.value === "true",
+                        });
+                        setReviewedFields((current) => new Set([...current, key]));
+                        setPetition(null);
+                        setDataConfirmed(false);
+                      }}
+                    >
+                      <option value="">Não informado</option>
+                      <option value="true">Sim</option>
+                      <option value="false">Não</option>
+                    </select>
+                  </label>
+                </div>
+              ))}
+            </fieldset>
+            <label className="petition-confirmation">
+              <input
+                type="checkbox"
+                checked={dataConfirmed}
+                disabled={hasMissingClientData || hasInvalidClientData}
+                onChange={(event) =>
+                  setDataConfirmed(event.target.checked)
+                }
+              />
 
-            <span>
-              Confirmo que conferi os dados.
-            </span>
-          </label>
+              <span>
+                Confirmo que conferi os dados.
+              </span>
+            </label>
 
             <button
               className="primary-button petition-generate-button"
@@ -1093,6 +1139,46 @@ async function handleFinalizePetition() {
                 <pre>
                   {petition.content}
                 </pre>
+
+
+                <div className="petition-export-actions">
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => handleExportPetition("pdf")}
+                    disabled={exportingFormat !== null}
+                    aria-busy={exportingFormat === "pdf"}
+                  >
+                    {exportingFormat === "pdf"
+                      ? "Exportando PDF..."
+                      : "Exportar PDF"}
+                  </button>
+
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => handleExportPetition("docx")}
+                    disabled={exportingFormat !== null}
+                    aria-busy={exportingFormat === "docx"}
+                  >
+                    {exportingFormat === "docx"
+                      ? "Exportando Word..."
+                      : "Exportar Word"}
+                  </button>
+                </div>
+
+                {exportMessage && (
+                  <p className="petition-export-success" role="status">
+                    {exportMessage}
+                  </p>
+                )}
+
+                {exportError && (
+                  <p className="petition-export-error" role="alert">
+                    {exportError}
+                  </p>
+                )}
+
 
                 {petition.status !== "FINALIZADA" ? (
                   <button

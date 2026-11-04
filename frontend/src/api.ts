@@ -338,3 +338,47 @@ export async function clauseRequest<T>(token: string, path = "", method = "GET",
   if (!response.ok) throw new Error(await parseError(response));
   return response.status === 204 ? undefined as T : response.json();
 }
+
+
+
+export async function exportPetition(
+  token: string,
+  documentId: number,
+  fileFormat: "pdf" | "docx"
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/petition/export/${fileFormat}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  const blob = await response.blob();
+
+  const disposition = response.headers.get("Content-Disposition");
+  const filenameMatch = disposition?.match(/filename="([^"]+)"/);
+
+  const filename =
+    filenameMatch?.[1] ?? `peticao.${fileFormat}`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  try {
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}

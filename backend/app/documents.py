@@ -1,3 +1,10 @@
+import re
+
+from fastapi.responses import Response
+
+from .petition_exporter import export_petition_docx, export_petition_pdf
+
+
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from uuid import uuid4
@@ -589,3 +596,89 @@ def document_case_suggestions(
     if document is None:
         raise HTTPException(404, "Documento não encontrado.")
     return identify_case_details(document.extracted_text or "")
+
+
+@router.get("/{document_id}/petition/export/{file_format}")
+def export_document_petition(
+    document_id: int,
+    file_format: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exporta a petição existente em Word ou PDF."""
+
+    if file_format not in ("pdf", "docx"):
+        raise HTTPException(
+            status_code=400,
+            detail="Formato inválido. Utilize pdf ou docx.",
+        )
+
+    document = db.scalar(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+        )
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Documento não encontrado.",
+        )
+
+    petition = db.scalar(
+        select(Petition).where(
+            Petition.document_id == document.id,
+        )
+    )
+
+    if petition is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Petição não encontrada.",
+        )
+
+    # Extrai o CPF do conteúdo da petição.
+    cpf_match = re.search(
+        r"CPF sob o n[º°o]?\s*([\d.\-]+)",
+        petition.content,
+        flags=re.IGNORECASE,
+    )
+
+    if cpf_match is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Não foi possível identificar o CPF da petição.",
+        )
+
+    cpf = re.sub(r"\D", "", cpf_match.group(1))
+
+    if len(cpf) != 11:
+        raise HTTPException(
+            status_code=422,
+            detail="CPF da petição inválido para exportação.",
+        )
+
+    export_date = datetime.now().strftime("%Y%m%d")
+    sequence = f"{petition.id:04d}"
+
+    filename = f"{cpf}_{export_date}_{sequence}.{file_format}"
+
+    if file_format == "docx":
+        content = export_petition_docx(petition.content)
+        media_type = (
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        )
+    else:
+        content = export_petition_pdf(petition.content)
+        media_type = "application/pdf"
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )

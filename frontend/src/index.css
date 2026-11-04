@@ -1163,3 +1163,47 @@ input:focus {
 .case-evidence figure { margin: 10px 0; }
 .case-evidence blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cbd4e7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .case-evidence figcaption { margin-top: 4px; font-size: 12px; }
+
+
+/* RF9 - Exportação de petições */
+
+.petition-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.petition-export-actions button {
+  min-width: 160px;
+}
+
+.petition-export-actions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.petition-export-success {
+  margin-top: 12px;
+  color: #16703c;
+  font-weight: 500;
+}
+
+.petition-export-error {
+  margin-top: 12px;
+  color: #b42318;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .petition-export-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .petition-export-actions button {
+    width: 100%;
+  }
+}
