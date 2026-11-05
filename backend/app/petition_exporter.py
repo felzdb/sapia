@@ -28,12 +28,11 @@ def is_heading(text: str, first_paragraph: bool = False) -> bool:
 
 
 def export_petition_docx(content: str) -> bytes:
-    """Gera um documento Word a partir do texto da petição."""
+    """Gera documento Word com formatação jurídica."""
 
     document = Document()
     section = document.sections[0]
 
-    # Página A4 e margens
     section.page_width = Cm(21)
     section.page_height = Cm(29.7)
     section.top_margin = Cm(3)
@@ -41,12 +40,11 @@ def export_petition_docx(content: str) -> bytes:
     section.left_margin = Cm(3)
     section.right_margin = Cm(2)
 
-    # Formatação padrão
     normal_style = document.styles["Normal"]
     normal_style.font.name = "Arial"
     normal_style.font.size = Pt(12)
     normal_style.paragraph_format.line_spacing = 1.5
-    normal_style.paragraph_format.space_after = Pt(6)
+    normal_style.paragraph_format.space_after = Pt(12)
 
     paragraphs = [
         line.strip()
@@ -60,6 +58,10 @@ def export_petition_docx(content: str) -> bytes:
         if is_heading(text, index == 0):
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
             paragraph.paragraph_format.keep_with_next = True
+            paragraph.paragraph_format.space_before = (
+                Pt(12) if index > 0 else Pt(0)
+            )
+            paragraph.paragraph_format.space_after = Pt(12)
 
             run = paragraph.add_run(text)
             run.bold = True
@@ -67,20 +69,18 @@ def export_petition_docx(content: str) -> bytes:
         else:
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             paragraph.paragraph_format.first_line_indent = Cm(1.25)
+            paragraph.paragraph_format.space_after = Pt(12)
             paragraph.add_run(text)
 
-    # Geração em memória
     buffer = BytesIO()
     document.save(buffer)
-
     return buffer.getvalue()
 
 
 def export_petition_pdf(content: str) -> bytes:
-    """Gera PDF com paginação automática e fontes portáteis."""
+    """Gera PDF com quebra de linhas e paginação automática."""
 
     fonts_directory = Path(__file__).resolve().parent / "fonts"
-
     font_regular = fonts_directory / "LiberationSans-Regular.ttf"
     font_bold = fonts_directory / "LiberationSans-Bold.ttf"
 
@@ -92,11 +92,9 @@ def export_petition_pdf(content: str) -> bytes:
     regular_font = fitz.Font(fontfile=str(font_regular))
     bold_font = fitz.Font(fontfile=str(font_bold))
 
-    # Dimensões da página A4 em pontos
     page_width = 595.28
     page_height = 841.89
 
-    # Margens: 3 cm superior/esquerda e 2 cm inferior/direita
     left_margin = 85.04
     right_margin = 56.69
     top_margin = 85.04
@@ -108,7 +106,9 @@ def export_petition_pdf(content: str) -> bytes:
     font_size = 12
     line_height = 18
     paragraph_spacing = 12
-    first_line_indent = 35.43  # 1,25 cm
+    heading_spacing_before = 12
+    heading_spacing_after = 12
+    first_line_indent = 35.43
 
     pdf = fitz.open()
 
@@ -123,7 +123,6 @@ def export_petition_pdf(content: str) -> bytes:
                 fontname="LiberationRegular",
                 fontfile=str(font_regular),
             )
-
             page.insert_font(
                 fontname="LiberationBold",
                 fontfile=str(font_bold),
@@ -132,21 +131,20 @@ def export_petition_pdf(content: str) -> bytes:
             return page
 
         def wrap_text(text, font, indent=0):
-            """Quebra linhas respeitando largura e recuo inicial."""
+            """Quebra o texto por palavras, respeitando as margens."""
 
             words = text.split()
             lines = []
             current_line = ""
 
             for word in words:
+                max_width = available_width
+                if not lines:
+                    max_width -= indent
+
                 candidate = (
                     f"{current_line} {word}".strip()
                 )
-
-                max_width = available_width
-
-                if not lines:
-                    max_width -= indent
 
                 if font.text_length(
                     candidate,
@@ -159,11 +157,15 @@ def export_petition_pdf(content: str) -> bytes:
                     lines.append(current_line)
                     current_line = ""
 
-                # Trata palavras maiores que a largura da página
-                max_width = available_width
-                if not lines:
-                    max_width -= indent
+                # Verifica se a palavra inteira cabe na nova linha.
+                if font.text_length(
+                    word,
+                    fontsize=font_size,
+                ) <= available_width:
+                    current_line = word
+                    continue
 
+                # Divide somente palavras maiores que a largura útil.
                 for character in word:
                     candidate = current_line + character
 
@@ -171,12 +173,11 @@ def export_petition_pdf(content: str) -> bytes:
                         font.text_length(
                             candidate,
                             fontsize=font_size,
-                        ) > max_width
+                        ) > available_width
                         and current_line
                     ):
                         lines.append(current_line)
                         current_line = character
-                        max_width = available_width
                     else:
                         current_line = candidate
 
@@ -202,18 +203,18 @@ def export_petition_pdf(content: str) -> bytes:
 
             font = bold_font if heading else regular_font
             font_name = (
-                "LiberationBold"
-                if heading
-                else "LiberationRegular"
+                "LiberationBold" if heading else "LiberationRegular"
             )
 
             indent = 0 if heading else first_line_indent
+            lines = wrap_text(paragraph, font, indent)
 
-            lines = wrap_text(
-                paragraph,
-                font,
-                indent,
-            )
+            if heading and index > 0:
+                if y + heading_spacing_before + (2 * line_height) > bottom_limit:
+                    page = new_page()
+                    y = top_margin
+                else:
+                    y += heading_spacing_before
 
             for line_index, line in enumerate(lines):
                 if y + line_height > bottom_limit:
@@ -225,19 +226,14 @@ def export_petition_pdf(content: str) -> bytes:
                         line,
                         fontsize=font_size,
                     )
-
                     x = left_margin + (
                         available_width - text_width
                     ) / 2
-
                 else:
                     x = left_margin
-
                     if line_index == 0:
                         x += first_line_indent
 
-                                # Justifica as linhas intermediárias dos parágrafos.
-                # A última linha permanece alinhada à esquerda.
                 should_justify = (
                     not heading
                     and line_index < len(lines) - 1
@@ -247,7 +243,10 @@ def export_petition_pdf(content: str) -> bytes:
                 if should_justify:
                     words = line.split()
                     text_width = sum(
-                        font.text_length(word, fontsize=font_size)
+                        font.text_length(
+                            word,
+                            fontsize=font_size,
+                        )
                         for word in words
                     )
 
@@ -286,7 +285,10 @@ def export_petition_pdf(content: str) -> bytes:
 
                 y += line_height
 
-            y += paragraph_spacing
+            if heading:
+                y += heading_spacing_after
+            else:
+                y += paragraph_spacing
 
         return pdf.tobytes()
 
