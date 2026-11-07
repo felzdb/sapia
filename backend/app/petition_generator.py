@@ -264,18 +264,13 @@ def generate_petition_text(
 
 QUALIFICAÇÃO
 
-{nome}, inscrito(a) no CPF sob o nº {cpf}, nascido(a) em
-{data_nascimento}, inscrito(a) no NIT/PIS sob o nº {nit_pis},
-vem apresentar a presente PETIÇÃO INICIAL referente ao benefício
-de {benefit_name}.
+{nome}, inscrito(a) no CPF sob o nº {cpf}, nascido(a) em {data_nascimento}, inscrito(a) no NIT/PIS sob o nº {nit_pis}, vem apresentar a presente PETIÇÃO INICIAL referente ao benefício de {benefit_name}.
 
 DOS FATOS
 
 {benefit_sections["fatos"]}
 
-O requerente possui benefício identificado sob o nº
-{numero_beneficio}, com data de início em {dib} e valor informado
-de {valor}.
+O requerente possui benefício identificado sob o nº {numero_beneficio}, com data de início em {dib} e valor informado de {valor}.
 
 {section_text("fatos")}
 
