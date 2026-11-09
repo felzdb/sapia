@@ -1,5 +1,8 @@
 import re
 
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from .schemas import ClientDataResponse
 
 
@@ -203,12 +206,30 @@ def clause_display_title(title: str) -> str:
     return re.sub(r"(?:\s*\(v\d+\))+\s*$", "", title, flags=re.IGNORECASE).strip()
 
 
+
 def generate_petition_text(
     benefit_type: str,
     client_data: ClientDataResponse,
     clauses: list[dict] | None = None,
     case_details: dict[str, bool | None] | None = None,
+    *,
+    cidade_peticao: str,
 ) -> str:
+
+    data_atual = datetime.now(ZoneInfo("America/Sao_Paulo"))
+
+    meses = (
+        "janeiro", "fevereiro", "março", "abril",
+        "maio", "junho", "julho", "agosto",
+        "setembro", "outubro", "novembro", "dezembro",
+    )
+
+    data_formatada = (
+        f"{data_atual.day} de {meses[data_atual.month - 1]} "
+        f"de {data_atual.year}"
+    )
+
+
     benefit_name = BENEFIT_NAMES.get(
         benefit_type,
         "Benefício Previdenciário",
@@ -268,9 +289,7 @@ QUALIFICAÇÃO
 
 DOS FATOS
 
-{benefit_sections["fatos"]}
-
-O requerente possui benefício identificado sob o nº {numero_beneficio}, com data de início em {dib} e valor informado de {valor}.
+{benefit_sections["fatos"]} O requerente possui benefício identificado sob o nº {numero_beneficio}, com data de início em {dib} e valor informado de {valor}.
 
 {section_text("fatos")}
 
@@ -299,6 +318,9 @@ DO VALOR DA CAUSA
 
 Valor a ser definido conforme os elementos do processo.
 
+
 Termos em que,
-Pede deferimento.
+pede deferimento.
+
+{cidade_peticao}, {data_formatada}.
 """

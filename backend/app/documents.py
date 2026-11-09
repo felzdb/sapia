@@ -492,11 +492,13 @@ def generate_document_petition(
     except ValidationError as exc:
         raise HTTPException(422, "Particularidades do caso inválidas.") from exc
     clauses, warnings = select_applicable(db, document.benefit_type, details, payload.dados_cliente)
+
     content = generate_petition_text(
         document.benefit_type,
         payload.dados_cliente,
         clauses,
         details,
+        cidade_peticao=payload.cidade_peticao.strip(),
     )
 
     petition = db.scalar(

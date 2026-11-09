@@ -269,11 +269,13 @@ export type PetitionResponse = {
   case_details: Record<string, boolean | null>;
 };
 
+
 export async function generatePetition(
   token: string,
   documentId: number,
   clientData: ClientData,
-  caseDetails: Record<string, boolean | null> = {}
+  caseDetails: Record<string, boolean | null>,
+  cidadePeticao: string
 ): Promise<PetitionResponse> {
   const response = await fetch(
     `${API_URL}/documents/${documentId}/petition`,
@@ -285,6 +287,7 @@ export async function generatePetition(
       },
       body: JSON.stringify({
         dados_cliente: clientData,
+        cidade_peticao: cidadePeticao.trim(),
         case_details: caseDetails,
       }),
     }
@@ -298,6 +301,7 @@ export async function generatePetition(
 
   return response.json();
 }
+
 
 export async function finalizePetition(
   token: string,

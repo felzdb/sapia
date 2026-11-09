@@ -87,9 +87,12 @@ class DocumentResponse(BaseModel):
     dados_cliente: ClientDataResponse | None = None
     case_suggestions: dict[str, CaseSuggestion] = Field(default_factory=dict)
 
+
 class PetitionGenerationRequest(BaseModel):
     dados_cliente: ClientDataResponse
+    cidade_peticao: str = Field(min_length=1, max_length=100)
     case_details: dict[str, StrictBool | None] = Field(default_factory=dict)
+
 
 class PetitionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

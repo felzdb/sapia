@@ -86,6 +86,8 @@ export default function UploadArea({
   const [clientData, setClientData] =
     useState<ClientData | null>(null);
 
+  const [cidadePeticao, setCidadePeticao] = useState("");
+
   const [selectedBenefit, setSelectedBenefit] =
     useState("");
 
@@ -117,6 +119,8 @@ export default function UploadArea({
     setExportMessage("");
     setExportError("");
   }, [petition]);
+
+  const hasMissingCidadePeticao = !cidadePeticao.trim();
 
   const hasMissingClientData =
     !!clientData &&
@@ -196,6 +200,7 @@ export default function UploadArea({
     setCaseSuggestions({});
     setReviewedFields(new Set());
     setClientData(null);
+    setCidadePeticao("");
     setPetition(null);
     setDataConfirmed(false);
 
@@ -561,6 +566,11 @@ export default function UploadArea({
       return;
     }
 
+    if (hasMissingCidadePeticao) {
+      setError("Informe a cidade da petição antes de gerar o documento.");
+      return;
+    }
+
     setError("");
     setPetition(null);
     setGeneratingPetition(true);
@@ -570,7 +580,8 @@ export default function UploadArea({
         token,
         document.id,
         clientData,
-        caseDetails
+        caseDetails,
+        cidadePeticao.trim()
       );
 
       setPetition(result);
@@ -920,6 +931,30 @@ export default function UploadArea({
                 </article>
 
                 <article>
+                  <span>Cidade da petição</span>
+
+                  <input
+                    type="text"
+                    value={cidadePeticao}
+                    placeholder="Ex.: Novo Hamburgo"
+                    maxLength={100}
+                    aria-required="true"
+                    aria-invalid={hasMissingCidadePeticao}
+                    onChange={(event) => {
+                      setCidadePeticao(event.target.value);
+                      setDataConfirmed(false);
+                      setPetition(null);
+                    }}
+                  />
+
+                  {hasMissingCidadePeticao && (
+                    <span className="field-error">
+                      Informe a cidade onde a petição será assinada.
+                    </span>
+                  )}
+                </article>
+
+                <article>
                   <span>Valor do benefício</span>
 
                   <input
@@ -1103,7 +1138,7 @@ export default function UploadArea({
               <input
                 type="checkbox"
                 checked={dataConfirmed}
-                disabled={hasMissingClientData || hasInvalidClientData}
+                disabled={hasMissingClientData || hasInvalidClientData || hasMissingCidadePeticao}
                 onChange={(event) =>
                   setDataConfirmed(event.target.checked)
                 }
@@ -1122,6 +1157,7 @@ export default function UploadArea({
               disabled={
                 generatingPetition ||
                 !dataConfirmed ||
+                hasMissingCidadePeticao ||
                 !document.dados_cliente ||
                 !document.benefit_type ||
                 document.benefit_type === "NAO_IDENTIFICADO"
