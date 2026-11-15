@@ -36,7 +36,7 @@ export default function Sidebar({
                     Enviar documento
                 </button>
 
-                <button className="nav-item">
+                <button className={`nav-item ${view === "history" ? "active" : ""}`} onClick={() => onViewChange("history")}>
                     <History size={19} />
                     Histórico
                 </button>
