@@ -76,7 +76,7 @@ class PetitionParticularsTests(unittest.TestCase):
     def test_api_and_finalize_return_the_saved_answers(self):
         url=f"/documents/{self.document_id}/petition"
         details={"insalubridade":True,"periculosidade":False,"gratuidade":False,"tutela_urgencia":None}
-        result=self.client.post(url,json={"dados_cliente":self.data,"case_details":details})
+        result=self.client.post(url,json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","case_details":details})
         self.assertEqual(result.status_code,200,result.text)
         self.assertEqual(result.json()["case_details"],details)
         finalized=self.client.patch(url+"/finalize")
@@ -87,7 +87,7 @@ class PetitionParticularsTests(unittest.TestCase):
     def test_regeneration_keeps_the_original_answers_in_history(self):
         url=f"/documents/{self.document_id}/petition"
         for value in (True,False):
-            result=self.client.post(url,json={"dados_cliente":self.data,"case_details":{"insalubridade":value}})
+            result=self.client.post(url,json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","case_details":{"insalubridade":value}})
             self.assertEqual(result.status_code,200,result.text)
         history=self.client.get(url+"/versions").json()
         self.assertFalse(history[0]["case_details"]["insalubridade"])
