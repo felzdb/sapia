@@ -820,3 +820,98 @@ def get_petition_history_detail(
         "status": petition.status,
         "content": petition.content,
     }
+
+
+@router.get("/history/{petition_id}/versions")
+def get_petition_history_versions(
+    petition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista snapshots já gerados, sem reprocessar o documento."""
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+
+    petition, _document = result
+    snapshots = db.scalars(
+        select(PetitionComposition)
+        .where(PetitionComposition.petition_id == petition.id)
+        .order_by(PetitionComposition.created_at.desc(), PetitionComposition.id.desc())
+    ).all()
+    return [
+        {
+            "version_id": row.id,
+            "created_at": row.created_at,
+            "benefit_type": row.benefit_type,
+            "content": row.content,
+        }
+        for row in snapshots
+    ]
+
+
+@router.get("/history/{petition_id}/versions/{version_id}/export/{file_format}")
+def export_petition_history_version(
+    petition_id: int,
+    version_id: int,
+    file_format: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reexporta um snapshot existente, sem executar novamente a geração."""
+    if file_format not in ("pdf", "docx"):
+        raise HTTPException(status_code=400, detail="Formato inválido. Utilize pdf ou docx.")
+
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+
+    petition, _document = result
+    snapshot = db.scalar(
+        select(PetitionComposition).where(
+            PetitionComposition.id == version_id,
+            PetitionComposition.petition_id == petition.id,
+        )
+    )
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Versão não encontrada.")
+
+    cpf_match = re.search(
+        r"CPF sob o n[º°o]?\\s*([\\d.\\-]+)",
+        snapshot.content,
+        flags=re.IGNORECASE,
+    )
+    if cpf_match is None:
+        raise HTTPException(status_code=422, detail="Não foi possível identificar o CPF da petição.")
+    cpf = re.sub(r"\\D", "", cpf_match.group(1))
+    if len(cpf) != 11:
+        raise HTTPException(status_code=422, detail="CPF da petição inválido para exportação.")
+
+    export_date = datetime.now().strftime("%Y%m%d")
+    filename = f"{cpf}_{export_date}_{petition.id:04d}_v{snapshot.id}.{file_format}"
+    if file_format == "docx":
+        content = export_petition_docx(snapshot.content)
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:
+        content = export_petition_pdf(snapshot.content)
+        media_type = "application/pdf"
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
