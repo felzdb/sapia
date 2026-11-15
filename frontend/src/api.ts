@@ -431,3 +431,50 @@ export async function getPetitionHistoryDetail(token: string, petitionId: number
   if (!response.ok) throw new Error(await parseError(response));
   return response.json();
 }
+
+
+export type PetitionHistoryVersion = {
+  version_id: number;
+  created_at: string;
+  benefit_type: string;
+  content: string;
+};
+
+export async function getPetitionHistoryVersions(
+  token: string,
+  petitionId: number
+): Promise<PetitionHistoryVersion[]> {
+  const response = await fetch(`${API_URL}/documents/history/${petitionId}/versions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return response.json();
+}
+
+export async function exportPetitionHistoryVersion(
+  token: string,
+  petitionId: number,
+  versionId: number,
+  fileFormat: "pdf" | "docx"
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/documents/history/${petitionId}/versions/${versionId}/export/${fileFormat}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!response.ok) throw new Error(await parseError(response));
+  const blob = await response.blob();
+  const disposition = response.headers.get("Content-Disposition");
+  const filename = disposition?.match(/filename="([^"]+)"/)?.[1]
+    ?? `peticao_${petitionId}_versao_${versionId}.${fileFormat}`;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  try {
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}
