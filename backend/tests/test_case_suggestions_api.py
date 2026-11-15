@@ -76,7 +76,7 @@ class CaseSuggestionAPITests(unittest.TestCase):
         result=self.upload("Atividade insalubre: Sim\nPedido de justiça gratuita: Sim")
         self.assertTrue(result["case_suggestions"]["insalubridade"]["value"])
         details={"insalubridade":False,"periculosidade":False,"gratuidade":True,"tutela_urgencia":None}
-        response=self.client.post(f'/documents/{result["id"]}/petition',json={"dados_cliente":result["dados_cliente"],"case_details":details})
+        response=self.client.post(f'/documents/{result["id"]}/petition',json={"dados_cliente":result["dados_cliente"],"cidade_peticao":"Caxias do Sul/RS","case_details":details})
         self.assertEqual(response.status_code,200,response.text)
         petition=response.json()
         self.assertEqual(petition["case_details"],details)
