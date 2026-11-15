@@ -749,7 +749,7 @@ def list_petition_history(
             "petition_id": petition.id,
             "document_id": document.id,
             "client_name": name_match.group(1).strip() if name_match else "Não identificado",
-            "cpf": cpf_match.group(1) if cpf_match else None,
+            "cpf": cpf_match.group(1).rstrip(".-") if cpf_match else None,
             "benefit_type": document.benefit_type,
             "generated_at": petition.generated_at,
             "status": petition.status,
