@@ -891,13 +891,13 @@ def export_petition_history_version(
         raise HTTPException(status_code=404, detail="Versão não encontrada.")
 
     cpf_match = re.search(
-        r"CPF sob o n[º°o]?\\s*([\\d.\\-]+)",
+        r"CPF sob o n[º°o]?\s*([\d.\-]+)",
         snapshot.content,
         flags=re.IGNORECASE,
     )
     if cpf_match is None:
         raise HTTPException(status_code=422, detail="Não foi possível identificar o CPF da petição.")
-    cpf = re.sub(r"\\D", "", cpf_match.group(1))
+    cpf = re.sub(r"\D", "", cpf_match.group(1))
     if len(cpf) != 11:
         raise HTTPException(status_code=422, detail="CPF da petição inválido para exportação.")
 
