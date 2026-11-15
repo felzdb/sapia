@@ -17,13 +17,13 @@ from fastapi import (
     UploadFile,
     status,
 )
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
 from .client_data import extract_client_data
 from .case_identifier import identify_case_details
-from .models import Document, Petition, User
+from .models import Document, Petition, PetitionAuditLog, User
 from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import (
     BenefitCorrectionRequest,
@@ -684,3 +684,107 @@ def export_document_petition(
             "Cache-Control": "no-store",
         },
     )
+
+
+@router.get("/history")
+def list_petition_history(
+    client_name: str | None = None,
+    cpf: str | None = None,
+    benefit_type: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista petições geradas; usuário comum vê as próprias e administrador vê todas."""
+    query = (
+        select(Petition, Document, User.name)
+        .join(Document, Petition.document_id == Document.id)
+        .join(User, Document.user_id == User.id)
+        .where(Petition.deleted_at.is_(None))
+    )
+
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+
+    if client_name and client_name.strip():
+        query = query.where(Petition.content.ilike(f"%{client_name.strip()}%"))
+
+    if cpf and cpf.strip():
+        digits = re.sub(r"\\D", "", cpf)
+        if digits:
+            normalized_content = func.replace(
+                func.replace(
+                    func.replace(
+                        func.replace(Petition.content, ".", ""),
+                        "-", "",
+                    ),
+                    " ", "",
+                ),
+                "/", "",
+            )
+            query = query.where(normalized_content.contains(digits))
+
+    if benefit_type and benefit_type.strip():
+        query = query.where(Document.benefit_type == benefit_type.strip())
+
+    if start_date:
+        query = query.where(Petition.generated_at >= start_date)
+    if end_date:
+        query = query.where(Petition.generated_at <= end_date)
+
+    rows = db.execute(query.order_by(Petition.generated_at.desc())).all()
+    history = []
+    for petition, document, owner_name in rows:
+        name_match = re.search(
+            r"QUALIFICAÇÃO\\s+(.+?),\\s+inscrito\\(a\\) no CPF",
+            petition.content,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        cpf_match = re.search(
+            r"CPF sob o n[º°o]?\\s*([\\d.\\-]+)",
+            petition.content,
+            flags=re.IGNORECASE,
+        )
+        history.append({
+            "petition_id": petition.id,
+            "document_id": document.id,
+            "client_name": name_match.group(1).strip() if name_match else "Não identificado",
+            "cpf": cpf_match.group(1) if cpf_match else None,
+            "benefit_type": document.benefit_type,
+            "generated_at": petition.generated_at,
+            "status": petition.status,
+            "owner_name": owner_name if current_user.role == "ADMINISTRADOR" else None,
+        })
+    return history
+
+
+@router.delete("/history/{petition_id}")
+def delete_petition_from_history(
+    petition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exclusão lógica: mantém o registro e grava auditoria para cumprir rastreabilidade."""
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+
+    petition, document = result
+    petition.deleted_at = datetime.utcnow()
+    db.add(PetitionAuditLog(
+        petition_id=petition.id,
+        user_id=current_user.id,
+        action="EXCLUSAO",
+        details=f"Petição {petition.id} removida do histórico pelo usuário {current_user.id}.",
+    ))
+    db.commit()
+    return {"message": "Petição removida do histórico."}
