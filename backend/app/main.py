@@ -29,7 +29,7 @@ from .auth import (
     verify_password,
 )
 from .database import (Base, SessionLocal, engine, ensure_user_confirmed_at_column)
-from .schema_updates import ensure_document_benefit_columns
+from .schema_updates import ensure_document_benefit_columns, ensure_petition_history_columns
 from .models import ConfirmationToken, User
 from .schemas import (
     ForgotPasswordRequest,
@@ -94,6 +94,7 @@ async def lifespan(app: FastAPI):
     SESSIONS.clear()
     Base.metadata.create_all(bind=engine)
     ensure_document_benefit_columns(engine)
+    ensure_petition_history_columns(engine)
     ensure_user_confirmed_at_column()
     seed_demo_user()
     seed_default_clauses()
