@@ -11,7 +11,7 @@ type SidebarProps = {
     user: User;
     onLogout: () => void;
     view: string;
-    onViewChange: (view: "upload" | "clauses") => void;
+    onViewChange: (view: "upload" | "history" | "clauses") => void;
 };
 
 export default function Sidebar({
