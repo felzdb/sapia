@@ -62,7 +62,7 @@ class PetitionParticularsTests(unittest.TestCase):
     def test_petition_has_clean_headings_and_keeps_original_metadata(self):
         clause = {"title":"[DEMO RF8] Atividade insalubre (v1)",
                   "section":"fatos", "rendered_text":"Texto da cláusula.", "version":1}
-        content = generate_petition_text("APOSENTADORIA_IDADE",ClientDataResponse(**self.data),[clause])
+        content = generate_petition_text("APOSENTADORIA_IDADE",ClientDataResponse(**self.data),[clause], cidade_peticao="Caxias do Sul/RS")
         self.assertIn("\nAtividade insalubre\nTexto da cláusula.",content)
         self.assertNotIn("[DEMO",content)
         self.assertNotIn("(v1)",content)
@@ -70,13 +70,13 @@ class PetitionParticularsTests(unittest.TestCase):
         self.assertEqual(clause["version"],1)
 
     def test_missing_answers_are_not_treated_as_no(self):
-        content=generate_petition_text("APOSENTADORIA_IDADE",ClientDataResponse(**self.data))
+        content=generate_petition_text("APOSENTADORIA_IDADE",ClientDataResponse(**self.data), cidade_peticao="Caxias do Sul/RS")
         self.assertEqual(content.count(": Não informado"),4)
 
     def test_api_and_finalize_return_the_saved_answers(self):
         url=f"/documents/{self.document_id}/petition"
         details={"insalubridade":True,"periculosidade":False,"gratuidade":False,"tutela_urgencia":None}
-        result=self.client.post(url,json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","case_details":details})
+        result=self.client.post(url,json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","cidade_peticao":"Caxias do Sul/RS","case_details":details})
         self.assertEqual(result.status_code,200,result.text)
         self.assertEqual(result.json()["case_details"],details)
         finalized=self.client.patch(url+"/finalize")
@@ -87,7 +87,7 @@ class PetitionParticularsTests(unittest.TestCase):
     def test_regeneration_keeps_the_original_answers_in_history(self):
         url=f"/documents/{self.document_id}/petition"
         for value in (True,False):
-            result=self.client.post(url,json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","case_details":{"insalubridade":value}})
+            result=self.client.post(url,json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","cidade_peticao":"Caxias do Sul/RS","case_details":{"insalubridade":value}})
             self.assertEqual(result.status_code,200,result.text)
         history=self.client.get(url+"/versions").json()
         self.assertFalse(history[0]["case_details"]["insalubridade"])
