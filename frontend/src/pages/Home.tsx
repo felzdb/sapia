@@ -13,7 +13,7 @@ import {
 import { logout, type User } from "../api";
 import ClauseManager from "../components/ClauseManager";
 import Sidebar from "../components/Sidebar";
-import UploadArea from "../components/UploadArea";
+import UploadArea from "../components/UploadArea";\nimport HistoryPage from "../components/HistoryPage";
 
 type HomeProps = {
     user: User;
@@ -27,7 +27,7 @@ export default function Home({
     onLogout,
 }: HomeProps) {
 
-    const [view, setView] = useState<"upload" | "clauses">("upload");
+    const [view, setView] = useState<"upload" | "history" | "clauses">("upload");
     const [processedDocuments, setProcessedDocuments] =
     useState(0);
 
@@ -72,7 +72,7 @@ export default function Home({
                     </div>
                 </header>
 
-                {view === "clauses" && user.role === "ADMINISTRADOR" ? <ClauseManager token={token}/> : <>
+                {view === "clauses" && user.role === "ADMINISTRADOR" ? <ClauseManager token={token}/> : view === "history" ? <HistoryPage token={token} isAdmin={user.role === "ADMINISTRADOR"}/> : <>
                 <section className="metrics-grid">
                     <article className="metric-card">
                         <div className="metric-icon">
