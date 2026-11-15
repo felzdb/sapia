@@ -9,10 +9,20 @@ Funcionalidades atualmente disponíveis:
 - Confirmação de cadastro por e-mail;
 - Login e controle de acesso;
 - Backend FastAPI;
-- Banco SQLite persistente;
+- Banco SQLite;
 - Sessões por token mantidas em memória;
 - Tela inicial do sistema;
-- Área de upload ainda não conectada ao processamento completo de documentos.
+- Upload de documentos PDF do INSS;
+- Leitura e análise do conteúdo do documento;
+- Análise documental assistida por IA com Google Gemini;
+- Extração dos dados pessoais e previdenciários do cliente;
+- Identificação automática do tipo de benefício;
+- Correção manual do benefício identificado;
+- Conferência e correção manual dos dados extraídos;
+- Validação de CPF por dígitos verificadores;
+- Geração automática da petição inicial conforme o tipo de benefício;
+- Pré-visualização e finalização da petição;
+- Indicadores visuais das etapas de processamento.
 
 ---
 
@@ -90,6 +100,7 @@ SMTP_PASSWORD=sua_senha_de_aplicativo
 SMTP_FROM=seu_email@gmail.com
 APP_BASE_URL=http://127.0.0.1:8000
 FRONTEND_URL=http://localhost:5173
+GEMINI_API_KEY=sua_chave_da_api_gemini
 ```
 
 ### Importante
@@ -103,6 +114,8 @@ Para Gmail, utilize uma **senha de aplicativo**, e não a senha normal da conta 
 Para gerar uma senha de aplicativo no Google, a verificação em duas etapas da conta deve estar ativada.
 
 Nunca coloque credenciais reais dentro do `.env.example`.
+
+Para utilizar a análise documental assistida por IA, informe uma chave válida da API do Google Gemini na variável `GEMINI_API_KEY`.
 
 ---
 
@@ -263,6 +276,55 @@ Dependendo do provedor de e-mail e da reputação da conta remetente utilizada n
 
 ---
 
+# RF7 — Geração Automática da Petição Inicial
+
+A implementação permite:
+
+- Utilizar os dados extraídos do documento e conferidos pelo usuário;
+- Utilizar o tipo de benefício identificado para selecionar o conteúdo da petição;
+- Exigir confirmação dos dados antes da geração;
+- Gerar automaticamente a petição inicial com partes fixas e variáveis;
+- Gerar a estrutura jurídica com:
+  - endereçamento;
+  - qualificação;
+  - dos fatos;
+  - do direito;
+  - dos pedidos;
+  - valor da causa;
+- Adaptar o conteúdo da petição ao tipo de benefício identificado;
+- Exibir a petição gerada para pré-visualização antes da finalização;
+- Salvar a petição no banco de dados vinculada ao documento;
+- Permitir a finalização da petição;
+- Atualizar visualmente as etapas do fluxo no painel.
+
+## Fluxo de teste
+
+1. Faça login no sistema.
+
+2. Envie um documento PDF do INSS.
+
+3. Aguarde a análise do documento e a extração dos dados.
+
+4. Confira os dados extraídos e faça correções manuais, se necessário.
+
+5. Confirme que os dados foram conferidos.
+
+6. Clique em **Gerar petição**.
+
+7. Confira o conteúdo na pré-visualização.
+
+8. Clique em **Finalizar petição**.
+
+A petição é registrada no banco de dados com seu conteúdo, status e vínculo ao documento processado durante a execução atual do backend.
+
+### Observação
+
+A geração e a pré-visualização da petição estão implementadas no protótipo.
+
+A formatação específica conforme o tribunal de destino ainda depende da definição e disponibilização dessas informações no fluxo do sistema.
+
+---
+
 # Credenciais de demonstração
 
 O usuário demonstrativo continua disponível:
@@ -284,15 +346,11 @@ O arquivo utilizado é:
 backend/sapia_demo.db
 ```
 
-O banco é criado automaticamente quando necessário.
+O banco é criado automaticamente durante a inicialização do backend.
 
-Diferentemente da versão inicial do protótipo, o banco **não é mais apagado sempre que o backend reinicia**.
+Na configuração atual do protótipo, o banco local é recriado quando o backend é iniciado.
 
-Isso permite manter usuários cadastrados entre as execuções.
-
-O arquivo `.db` está ignorado pelo Git, portanto cada desenvolvedor terá seu próprio banco local.
-
-Alterações necessárias para compatibilidade com bancos criados em versões anteriores são aplicadas durante a inicialização quando necessário.
+O arquivo `.db` está ignorado pelo Git, portanto cada desenvolvedor possui seu próprio banco local.
 
 ---
 
@@ -303,26 +361,38 @@ sapia/
 ├── backend/
 │   ├── app/
 │   │   ├── auth.py
+│   │   ├── benefit_identifier.py
+│   │   ├── client_data.py
 │   │   ├── database.py
+│   │   ├── documents.py
 │   │   ├── email_service.py
+│   │   ├── gemini_service.py
 │   │   ├── main.py
 │   │   ├── models.py
-│   │   └── schemas.py
+│   │   ├── pdf_reader.py
+│   │   ├── petition_generator.py
+│   │   ├── schemas.py
+│   │   ├── storage.py
+│   │   └── __init__.py
 │   ├── .env.example
 │   └── requirements.txt
 │
 └── frontend/
     ├── src/
     │   ├── pages/
+    │   │   ├── ForgotPassword.tsx
+    │   │   ├── Home.tsx
     │   │   ├── Login.tsx
     │   │   ├── Register.tsx
-    │   │   └── Home.tsx
+    │   │   └── ResetPassword.tsx
     │   ├── components/
-    │   │   └── Sidebar.tsx
+    │   │   ├── Sidebar.tsx
+    │   │   └── UploadArea.tsx
     │   ├── api.ts
     │   ├── App.tsx
     │   ├── index.css
-    │   └── main.tsx
+    │   ├── main.tsx
+    │   └── vite-env.d.ts
     ├── package.json
     ├── tsconfig.json
     └── vite.config.ts
@@ -420,6 +490,52 @@ Invalida a sessão atual.
 
 ---
 
+## POST /auth/forgot-password
+
+Solicita a recuperação de senha por e-mail.
+
+---
+
+## POST /auth/reset-password
+
+Redefine a senha utilizando o token de recuperação recebido por e-mail.
+
+---
+
+# Endpoints de documentos
+
+As rotas abaixo exigem usuário autenticado.
+
+## POST /documents/upload
+
+Realiza o upload do documento PDF do INSS para processamento e análise.
+
+O documento é associado ao usuário autenticado.
+
+---
+
+## PATCH /documents/{document_id}/benefit
+
+Permite corrigir manualmente o tipo de benefício identificado para o documento.
+
+---
+
+## POST /documents/{document_id}/petition
+
+Gera a petição inicial com base:
+
+- no documento processado;
+- no tipo de benefício identificado;
+- nos dados do cliente conferidos pelo usuário.
+
+A petição gerada é registrada no banco de dados e vinculada ao documento.
+
+---
+
+## PATCH /documents/{document_id}/petition/finalize
+
+Finaliza a petição previamente gerada, atualizando seu status no sistema.
+
 # Observações de segurança
 
 Nunca enviar ao Git:
@@ -447,11 +563,9 @@ deve conter somente exemplos e nomes das variáveis.
 
 A continuidade do projeto poderá incluir:
 
-1. Upload real de PDF;
-2. Persistência e gerenciamento de documentos;
-3. Extração de dados do documento;
-4. Processamento por IA;
-5. Revisão dos dados extraídos;
-6. Geração da petição;
-7. Exportação;
-8. Histórico de documentos.
+1. Suporte completo a documentos escaneados por OCR;
+2. Banco de cláusulas configurável e versionado;
+3. Formatação da petição conforme o tribunal de destino;
+4. Exportação da petição nos formatos Word e PDF;
+5. Histórico de documentos e petições geradas;
+6. Persistência durável dos dados e documentos entre reinicializações do backend.

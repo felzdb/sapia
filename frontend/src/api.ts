@@ -106,6 +106,7 @@ export async function getMe(token: string): Promise<User> {
   return response.json();
 }
 
+
 export async function logout(token: string): Promise<void> {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
@@ -160,6 +161,24 @@ export async function resetPassword(
 }
 
 
+export type ClientData = {
+  nome: string | null;
+  cpf: string | null;
+  data_nascimento: string | null;
+  nit_pis: string | null;
+  numero_beneficio: string | null;
+  data_inicio_beneficio: string | null;
+  competencias: string[];
+  valor_beneficio: string | null;
+};
+
+export type CaseSuggestion = {
+  value: boolean | null;
+  status: "suggested" | "not_found" | "conflicting";
+  reason: string;
+  evidence: { quote: string; page: number }[];
+};
+
 export type DocumentResponse = {
   id: number;
   original_filename: string;
@@ -169,6 +188,10 @@ export type DocumentResponse = {
   extracted_text: string | null;
   page_count: number | null;
   pages_without_text: number[];
+  benefit_type: string | null;
+  benefit_confidence: number | null;
+  dados_cliente: ClientData | null;
+  case_suggestions: Record<string, CaseSuggestion>;
 };
 
 export async function uploadDocument(
@@ -197,4 +220,169 @@ export async function uploadDocument(
   }
 
   return response.json();
+}
+
+export type BenefitCorrectionResponse = {
+  id: number;
+  benefit_original_type: string | null;
+  benefit_type: string;
+  benefit_confidence: number | null;
+  benefit_corrected_manually: boolean;
+};
+
+export async function correctDocumentBenefit(
+  token: string,
+  documentId: number,
+  benefitType: string
+): Promise<BenefitCorrectionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/benefit`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        benefit_type: benefitType,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}
+
+export type PetitionResponse = {
+  id: number;
+  document_id: number;
+  content: string;
+  status: string;
+  generated_at: string;
+  clauses: (Clause & {rendered_text: string})[];
+  warnings: string[];
+  case_details: Record<string, boolean | null>;
+};
+
+
+export async function generatePetition(
+  token: string,
+  documentId: number,
+  clientData: ClientData,
+  caseDetails: Record<string, boolean | null>,
+  cidadePeticao: string
+): Promise<PetitionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/petition`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dados_cliente: clientData,
+        cidade_peticao: cidadePeticao.trim(),
+        case_details: caseDetails,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function finalizePetition(
+  token: string,
+  documentId: number
+): Promise<PetitionResponse> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/petition/finalize`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response)
+    );
+  }
+
+  return response.json();
+}
+
+export type Clause = {
+  id: number; active: boolean; version: number; title: string; text: string;
+  section: string; benefit_types: string[]; conditions: Record<string, boolean>;
+  display_order: number; created_at: string;
+};
+export type ClauseOptions = {
+  benefit_types: string[]; case_fields: Record<string, string>; sections: string[]; placeholders: string[];
+};
+export async function clauseRequest<T>(token: string, path = "", method = "GET", body?: unknown): Promise<T> {
+  const response = await fetch(`${API_URL}/clauses${path}`, {
+    method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return response.status === 204 ? undefined as T : response.json();
+}
+
+
+
+export async function exportPetition(
+  token: string,
+  documentId: number,
+  fileFormat: "pdf" | "docx"
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/documents/${documentId}/petition/export/${fileFormat}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  const blob = await response.blob();
+
+  const disposition = response.headers.get("Content-Disposition");
+  const filenameMatch = disposition?.match(/filename="([^"]+)"/);
+
+  const filename =
+    filenameMatch?.[1] ?? `peticao.${fileFormat}`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  try {
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }

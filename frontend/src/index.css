@@ -537,6 +537,16 @@ input:focus {
   color: white;
 }
 
+.flow-step.completed > span {
+  background: #2f7d4a;
+  border-color: #2f7d4a;
+  color: white;
+}
+
+.flow-step.completed strong {
+  color: #2f7d4a;
+}
+
 .flow-line {
   flex: 1;
   height: 1px;
@@ -557,6 +567,16 @@ input:focus {
   height: 50px;
   background: #263b77;
   color: white;
+}
+
+.petition-finalized-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #b7dfc2;
+  border-radius: 6px;
+  background: #eefaf1;
+  color: #2f7d4a;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
@@ -718,11 +738,58 @@ input:focus {
   font-size: 15px;
 }
 
+.document-summary-card select,
+.document-summary-card button {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .extracted-content {
   padding: 18px;
   border: 1px solid #dfe4ee;
   border-radius: 8px;
   background: #fff;
+}
+
+.extracted-content-details {
+  padding: 0;
+  overflow: hidden;
+}
+
+.extracted-content-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 18px;
+  color: #263b77;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.extracted-content-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.extracted-content-details[open] .extracted-content-toggle {
+  border-bottom: 1px solid #e2e6ee;
+}
+
+.extracted-content-details pre,
+.extracted-content-details .ocr-warning {
+  margin-left: 18px;
+  margin-right: 18px;
+}
+
+.extracted-content-details pre {
+  margin-top: 16px;
+}
+
+.extracted-content-details .ocr-warning {
+  margin-bottom: 18px;
 }
 
 .extracted-content-heading {
@@ -774,5 +841,369 @@ input:focus {
 @media (max-width: 560px) {
   .document-summary {
     grid-template-columns: 1fr;
+  }
+}
+
+
+.client-data-card {
+  padding: 18px;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.client-data-card .extracted-content-heading {
+  margin-bottom: 16px;
+}
+
+.client-data-card .extracted-content-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.client-data-card .extracted-content-heading span {
+  color: #737d91;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.petition-generation {
+  padding: 18px;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.petition-generation .extracted-content-heading {
+  margin-bottom: 16px;
+}
+
+.petition-generation .extracted-content-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.petition-generation .extracted-content-heading span {
+  color: #737d91;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.petition-generate-button {
+  width: 100%;
+}
+
+.petition-preview {
+  margin-top: 16px;
+}
+
+.petition-preview h3 {
+  margin: 0 0 10px;
+  color: #263b77;
+  font-size: 16px;
+}
+
+.petition-preview pre {
+  max-height: 520px;
+  margin: 0;
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid #e2e6ee;
+  border-radius: 6px;
+  background: #f8f9fc;
+  color: #283044;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.petition-confirmation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.petition-confirmation input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.client-data-grid .field-error {
+  display: block;
+  margin-top: 5px;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.client-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.client-data-grid article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e2e6ee;
+  border-radius: 6px;
+  background: #fafbfe;
+  display: grid;
+  gap: 6px;
+}
+
+.client-data-grid span {
+  color: #737d91;
+  font-size: 12px;
+}
+
+.client-data-grid strong {
+  overflow-wrap: anywhere;
+  color: #263b77;
+  font-size: 14px;
+}
+
+.client-data-grid input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #d7ddea;
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #263b77;
+  font: inherit;
+  font-size: 14px;
+}
+
+.client-data-grid input:focus {
+  outline: 2px solid #c9d4f0;
+  border-color: #405b9a;
+}
+
+.client-data-grid input:placeholder-shown {
+  border-color: #d9b54a;
+  background: #fff9e8;
+}
+
+.client-data-grid input::placeholder {
+  color: #8a6d1d;
+}
+
+.client-data-note {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff9e8;
+  color: #745b12;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .client-data-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.petition-generate-button:disabled {
+  cursor: not-allowed;
+}
+
+.petition-generate-button[aria-busy="true"] {
+  cursor: wait;
+}
+
+.clause-manager form, .case-details { display: grid; gap: 16px; margin: 20px 0; }
+.clause-manager label, .case-details label { display: grid; gap: 6px; font-weight: 500; }
+.clause-manager input:not([type="checkbox"]), .clause-manager select, .clause-manager textarea, .case-details select { width: 100%; padding: 10px; border: 1px solid #ccd3df; border-radius: 6px; font: inherit; background: white; }
+.clause-manager fieldset, .case-details { padding: 16px; border: 1px solid #ccd3df; border-radius: 8px; }
+.clause-manager .clause-check { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.clause-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.clause-record { border-top: 1px solid #dce1e9; margin-top: 20px; padding-top: 16px; }
+.clause-record pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.clause-record button { margin: 4px 10px 4px 0; padding: 8px 14px; cursor: pointer; }
+
+
+/* RF8: benefícios em bloco compacto e checkboxes ao lado dos nomes. */
+.clause-manager .benefits-fieldset {
+  width: 100%;
+  max-width: 600px;
+  min-width: 0;
+  padding: 10px 12px;
+  justify-self: start;
+  box-sizing: border-box;
+}
+
+.benefits-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 8px 16px;
+}
+
+.clause-manager .benefits-options .clause-check {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.clause-manager .benefits-options .clause-check input[type="checkbox"] {
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  flex: 0 0 16px;
+  margin: 1px 0 0;
+  padding: 0;
+  appearance: auto;
+  accent-color: #263b77;
+  cursor: pointer;
+}
+
+.clause-manager .benefits-options .clause-check input[type="checkbox"]:focus-visible {
+  outline: 2px solid #526db9;
+  outline-offset: 3px;
+}
+
+.clause-manager .benefits-options .clause-check span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.clause-help summary {
+  cursor: pointer;
+  color: #263b77;
+  font-weight: 600;
+}
+
+/* Resumo da geração: separa benefício, respostas e cláusulas condicionais. */
+.petition-summary {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0 20px;
+}
+
+.petition-summary-section {
+  min-width: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e6ee;
+}
+
+.petition-summary h4,
+.petition-summary h5 {
+  margin: 0 0 10px;
+  color: #172033;
+  font-size: 14px;
+}
+
+.petition-summary h5 {
+  margin-top: 16px;
+}
+
+.petition-summary ul {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.petition-summary li {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.petition-particulars-list {
+  display: grid;
+  gap: 8px;
+  max-width: 600px;
+  margin: 0;
+}
+
+.petition-particulars-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 12px;
+  align-items: start;
+}
+
+.petition-particulars-list dt {
+  font-weight: 500;
+}
+
+.petition-particulars-list dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .petition-particulars-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.case-suggestion { min-width: 0; }
+.case-evidence { margin-top: 8px; color: #59677d; font-size: 13px; line-height: 1.5; }
+.case-evidence p { margin: 4px 0; }
+.case-evidence-status { font-weight: 600; }
+.case-evidence-conflicting .case-evidence-status { color: #92520c; }
+.case-evidence summary, .petition-warnings summary { cursor: pointer; color: #263b77; }
+.case-evidence figure { margin: 10px 0; }
+.case-evidence blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cbd4e7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.case-evidence figcaption { margin-top: 4px; font-size: 12px; }
+
+
+/* RF9 - Exportação de petições */
+
+.petition-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.petition-export-actions button {
+  min-width: 160px;
+}
+
+.petition-export-actions button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.petition-export-success {
+  margin-top: 12px;
+  color: #16703c;
+  font-weight: 500;
+}
+
+.petition-export-error {
+  margin-top: 12px;
+  color: #b42318;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .petition-export-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .petition-export-actions button {
+    width: 100%;
   }
 }

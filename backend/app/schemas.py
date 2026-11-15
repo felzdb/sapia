@@ -1,5 +1,9 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import datetime
+
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StrictBool
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -43,6 +47,30 @@ class HealthResponse(BaseModel):
     status: str
     service: str
 
+
+class ClientDataResponse(BaseModel):
+    nome: str | None = None
+    cpf: str | None = None
+    data_nascimento: str | None = None
+    nit_pis: str | None = None
+    numero_beneficio: str | None = None
+    data_inicio_beneficio: str | None = None
+    competencias: list[str] = Field(default_factory=list)
+    valor_beneficio: str | None = None
+
+
+class CaseEvidence(BaseModel):
+    quote: str
+    page: int = Field(ge=1)
+
+
+class CaseSuggestion(BaseModel):
+    value: StrictBool | None = None
+    status: Literal["suggested", "not_found", "conflicting"] = "not_found"
+    reason: str
+    evidence: list[CaseEvidence] = Field(default_factory=list)
+
+
 class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,3 +82,30 @@ class DocumentResponse(BaseModel):
     extracted_text: str | None = None
     page_count: int | None = None
     pages_without_text: list[int] = Field(default_factory=list)
+    benefit_type: str | None = None
+    benefit_confidence: float | None = None
+    dados_cliente: ClientDataResponse | None = None
+    case_suggestions: dict[str, CaseSuggestion] = Field(default_factory=dict)
+
+
+class PetitionGenerationRequest(BaseModel):
+    dados_cliente: ClientDataResponse
+    cidade_peticao: str = Field(min_length=1, max_length=100)
+    case_details: dict[str, StrictBool | None] = Field(default_factory=dict)
+
+
+class PetitionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    document_id: int
+    content: str
+    status: str
+    generated_at: datetime
+
+    clauses: list[dict] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    case_details: dict[str, StrictBool | None] = Field(default_factory=dict)
+
+class BenefitCorrectionRequest(BaseModel):
+    benefit_type: str

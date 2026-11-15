@@ -15,8 +15,8 @@ from .email_service import (
     send_password_reset_email,
 )
 
-from .storage import reset_temp_storage
 from .documents import router as documents_router
+from .clauses import router as clauses_router
 
 from .auth import (
     SESSIONS,
@@ -28,7 +28,8 @@ from .auth import (
     revoke_token,
     verify_password,
 )
-from .database import (Base, SessionLocal, engine, ensure_user_confirmed_at_column, reset_database_file)
+from .database import (Base, SessionLocal, engine, ensure_user_confirmed_at_column)
+from .schema_updates import ensure_document_benefit_columns
 from .models import ConfirmationToken, User
 from .schemas import (
     ForgotPasswordRequest,
@@ -64,6 +65,20 @@ def seed_demo_user() -> None:
         db.commit()
 
 
+def seed_default_clauses() -> None:
+    """Disponibiliza exemplos para todos os benefícios sem apagar cadastros."""
+    from .demo_clauses import register_demo_clauses
+
+    with SessionLocal() as db:
+        administrator = db.scalar(
+            select(User).where(
+                User.role == "ADMINISTRADOR", User.status == "ATIVO"
+            ).order_by(User.id)
+        )
+        if administrator is not None:
+            register_demo_clauses(db, administrator.id)
+
+
 def password_is_strong(password: str) -> bool:
     return (
         len(password) >= 8
@@ -77,16 +92,15 @@ def password_is_strong(password: str) -> bool:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SESSIONS.clear()
-    reset_database_file()
-    reset_temp_storage()
     Base.metadata.create_all(bind=engine)
+    ensure_document_benefit_columns(engine)
     ensure_user_confirmed_at_column()
     seed_demo_user()
+    seed_default_clauses()
 
     yield
 
     SESSIONS.clear()
-    reset_temp_storage()
 
 
 app = FastAPI(
@@ -105,9 +119,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 app.include_router(documents_router)
+app.include_router(clauses_router)
 
 
 @app.get("/health", response_model=HealthResponse)

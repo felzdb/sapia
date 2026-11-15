@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -87,8 +87,63 @@ class Document(Base):
         nullable=True
     )
 
+    benefit_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    benefit_confidence: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
+    benefit_original_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    benefit_corrected_manually: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
+    
+
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         nullable=False
+    )
+
+class Petition(Base):
+    __tablename__ = "peticao"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("documento.id"),
+        unique=True,
+        nullable=False,
+    )
+
+    content: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="GERADA",
+        nullable=False,
+    )
+
+    generated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
     )
