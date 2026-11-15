@@ -147,3 +147,16 @@ class Petition(Base):
         default=datetime.utcnow,
         nullable=False,
     )
+
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class PetitionAuditLog(Base):
+    __tablename__ = "peticao_auditoria"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    petition_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("usuario.id"), nullable=False, index=True)
+    action: Mapped[str] = mapped_column(String(30), nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
