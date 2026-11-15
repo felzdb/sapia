@@ -421,3 +421,13 @@ export async function deletePetitionHistory(token: string, petitionId: number): 
   });
   if (!response.ok) throw new Error(await parseError(response));
 }
+
+export type PetitionHistoryDetail = PetitionHistoryItem & { content: string };
+
+export async function getPetitionHistoryDetail(token: string, petitionId: number): Promise<PetitionHistoryDetail> {
+  const response = await fetch(`${API_URL}/documents/history/${petitionId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return response.json();
+}
