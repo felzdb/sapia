@@ -615,12 +615,10 @@ def export_document_petition(
             detail="Formato inválido. Utilize pdf ou docx.",
         )
 
-    document = db.scalar(
-        select(Document).where(
-            Document.id == document_id,
-            Document.user_id == current_user.id,
-        )
-    )
+    document_query = select(Document).where(Document.id == document_id)
+    if current_user.role != "ADMINISTRADOR":
+        document_query = document_query.where(Document.user_id == current_user.id)
+    document = db.scalar(document_query)
 
     if document is None:
         raise HTTPException(
@@ -631,6 +629,7 @@ def export_document_petition(
     petition = db.scalar(
         select(Petition).where(
             Petition.document_id == document.id,
+            Petition.deleted_at.is_(None),
         )
     )
 
@@ -711,7 +710,7 @@ def list_petition_history(
         query = query.where(Petition.content.ilike(f"%{client_name.strip()}%"))
 
     if cpf and cpf.strip():
-        digits = re.sub(r"\\D", "", cpf)
+        digits = re.sub(r"\D", "", cpf)
         if digits:
             normalized_content = func.replace(
                 func.replace(
@@ -737,12 +736,12 @@ def list_petition_history(
     history = []
     for petition, document, owner_name in rows:
         name_match = re.search(
-            r"QUALIFICAÇÃO\\s+(.+?),\\s+inscrito\\(a\\) no CPF",
+            r"QUALIFICAÇÃO\s+(.+?),\s+inscrito\(a\) no CPF",
             petition.content,
             flags=re.IGNORECASE | re.DOTALL,
         )
         cpf_match = re.search(
-            r"CPF sob o n[º°o]?\\s*([\\d.\\-]+)",
+            r"CPF sob o n[º°o]?\s*([\d.\-]+)",
             petition.content,
             flags=re.IGNORECASE,
         )
