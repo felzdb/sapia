@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import {
   deletePetitionHistory,
   exportPetition,
+  exportPetitionHistoryVersion,
+  getPetitionHistoryVersions,
   getPetitionHistory,
   getPetitionHistoryDetail,
   type PetitionHistoryDetail,
   type PetitionHistoryItem,
+  type PetitionHistoryVersion,
 } from "../api";
 
 type Props = { token: string; isAdmin: boolean };
@@ -17,7 +20,7 @@ export default function HistoryPage({ token, isAdmin }: Props) {
   const [benefitType, setBenefitType] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [detail, setDetail] = useState<PetitionHistoryDetail | null>(null);
+  const [detail, setDetail] = useState<PetitionHistoryDetail | null>(null);\n  const [versions, setVersions] = useState<PetitionHistoryVersion[]>([]);\n  const [versionsLoading, setVersionsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -127,9 +130,9 @@ export default function HistoryPage({ token, isAdmin }: Props) {
           <div style={{ background: "#fff", borderRadius: 12, width: "min(900px, 100%)", maxHeight: "85vh", overflow: "auto", padding: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
               <h2>Petição — {detail.client_name}</h2>
-              <button onClick={() => setDetail(null)}>Fechar</button>
+              <button onClick={() => { setDetail(null); setVersions([]); }}>Fechar</button>
             </div>
-            <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", lineHeight: 1.6 }}>{detail.content}</pre>
+            <h3>Versões salvas</h3>\n            {versionsLoading ? <p>Carregando versões...</p> : versions.length === 0 ? <p>Nenhuma versão anterior foi registrada para esta petição.</p> : (\n              <div style={{ display: "grid", gap: 8, marginBottom: 20 }}>\n                {versions.map((version, index) => (\n                  <div key={version.version_id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, border: "1px solid #e5e7eb", borderRadius: 8, padding: 12 }}>\n                    <span>Versão {versions.length - index} — {new Date(version.created_at).toLocaleString("pt-BR")}</span>\n                    <span>\n                      <button onClick={() => setDetail({ ...detail, content: version.content })}>Visualizar versão</button>{" "}\n                      <button onClick={() => void exportPetitionHistoryVersion(token, detail.petition_id, version.version_id, "pdf")}>PDF</button>{" "}\n                      <button onClick={() => void exportPetitionHistoryVersion(token, detail.petition_id, version.version_id, "docx")}>Word</button>\n                    </span>\n                  </div>\n                ))}\n              </div>\n            )}\n            <h3>Conteúdo da petição selecionada</h3>\n            <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", lineHeight: 1.6 }}>{detail.content}</pre>
           </div>
         </div>
       )}
