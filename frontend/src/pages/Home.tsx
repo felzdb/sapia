@@ -13,7 +13,8 @@ import {
 import { logout, type User } from "../api";
 import ClauseManager from "../components/ClauseManager";
 import Sidebar from "../components/Sidebar";
-import UploadArea from "../components/UploadArea";\nimport HistoryPage from "../components/HistoryPage";
+import UploadArea from "../components/UploadArea";
+import HistoryPage from "../components/HistoryPage";
 
 type HomeProps = {
     user: User;
