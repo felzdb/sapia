@@ -28,3 +28,18 @@ def ensure_document_benefit_columns(db_engine) -> None:
                 connection.exec_driver_sql(
                     f"ALTER TABLE documento ADD COLUMN {name} {definition}"
                 )
+
+
+def ensure_petition_history_columns(db_engine) -> None:
+    """Adiciona campos do RF10 sem apagar petições já existentes."""
+    with db_engine.begin() as connection:
+        columns = connection.exec_driver_sql(
+            "PRAGMA table_info(peticao)"
+        ).fetchall()
+        if not columns:
+            raise RuntimeError("A tabela peticao deve ser criada antes da atualização.")
+        column_names = {column[1] for column in columns}
+        if "deleted_at" not in column_names:
+            connection.exec_driver_sql(
+                "ALTER TABLE peticao ADD COLUMN deleted_at DATETIME"
+            )
