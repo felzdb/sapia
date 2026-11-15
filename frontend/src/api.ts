@@ -386,3 +386,38 @@ export async function exportPetition(
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }
+
+
+export type PetitionHistoryItem = {
+  petition_id: number;
+  document_id: number;
+  client_name: string;
+  cpf: string | null;
+  benefit_type: string | null;
+  generated_at: string;
+  status: string;
+  owner_name?: string | null;
+};
+
+export async function getPetitionHistory(
+  token: string,
+  filters: { client_name?: string; cpf?: string; benefit_type?: string; start_date?: string; end_date?: string } = {}
+): Promise<PetitionHistoryItem[]> {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value?.trim()) params.set(key, value.trim());
+  });
+  const response = await fetch(`${API_URL}/documents/history?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return response.json();
+}
+
+export async function deletePetitionHistory(token: string, petitionId: number): Promise<void> {
+  const response = await fetch(`${API_URL}/documents/history/${petitionId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+}
