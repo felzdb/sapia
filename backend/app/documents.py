@@ -787,3 +787,36 @@ def delete_petition_from_history(
     ))
     db.commit()
     return {"message": "Petição removida do histórico."}
+
+
+@router.get("/history/{petition_id}")
+def get_petition_history_detail(
+    petition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+    petition, document = result
+    name_match = re.search(
+        r"QUALIFICAÇÃO\s+(.+?),\s+inscrito\(a\) no CPF",
+        petition.content,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return {
+        "petition_id": petition.id,
+        "document_id": document.id,
+        "client_name": name_match.group(1).strip() if name_match else "Não identificado",
+        "benefit_type": document.benefit_type,
+        "generated_at": petition.generated_at,
+        "status": petition.status,
+        "content": petition.content,
+    }
