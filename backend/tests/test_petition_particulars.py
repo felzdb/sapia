@@ -38,7 +38,7 @@ class PetitionParticularsTests(unittest.TestCase):
 
     def test_four_answers_appear_between_requests_and_cause_value(self):
         content=generate_petition_text("APOSENTADORIA_IDADE",ClientDataResponse(**self.data),[],{
-            "insalubridade":True,"periculosidade":False,"gratuidade":True,"tutela_urgencia":None})
+            "insalubridade":True,"periculosidade":False,"gratuidade":True,"tutela_urgencia":None}, cidade_peticao="Caxias do Sul/RS")
         self.assertIn("Atividade insalubre: Sim",content)
         self.assertIn("Atividade perigosa: Não",content)
         self.assertIn("Pedido de justiça gratuita: Sim",content)
