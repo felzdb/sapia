@@ -11,7 +11,7 @@ type SidebarProps = {
     user: User;
     onLogout: () => void;
     view: string;
-    onViewChange: (view: "upload" | "clauses") => void;
+    onViewChange: (view: "upload" | "history" | "clauses") => void;
 };
 
 export default function Sidebar({
@@ -36,7 +36,7 @@ export default function Sidebar({
                     Enviar documento
                 </button>
 
-                <button className="nav-item">
+                <button className={`nav-item ${view === "history" ? "active" : ""}`} onClick={() => onViewChange("history")}>
                     <History size={19} />
                     Histórico
                 </button>

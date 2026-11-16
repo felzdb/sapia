@@ -17,13 +17,13 @@ from fastapi import (
     UploadFile,
     status,
 )
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
 from .client_data import extract_client_data
 from .case_identifier import identify_case_details
-from .models import Document, Petition, User
+from .models import Document, Petition, PetitionAuditLog, User
 from .pdf_reader import PDFReadError, read_pdf_document
 from .schemas import (
     BenefitCorrectionRequest,
@@ -615,12 +615,10 @@ def export_document_petition(
             detail="Formato inválido. Utilize pdf ou docx.",
         )
 
-    document = db.scalar(
-        select(Document).where(
-            Document.id == document_id,
-            Document.user_id == current_user.id,
-        )
-    )
+    document_query = select(Document).where(Document.id == document_id)
+    if current_user.role != "ADMINISTRADOR":
+        document_query = document_query.where(Document.user_id == current_user.id)
+    document = db.scalar(document_query)
 
     if document is None:
         raise HTTPException(
@@ -631,6 +629,7 @@ def export_document_petition(
     petition = db.scalar(
         select(Petition).where(
             Petition.document_id == document.id,
+            Petition.deleted_at.is_(None),
         )
     )
 
@@ -683,4 +682,236 @@ def export_document_petition(
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "no-store",
         },
+    )
+
+
+@router.get("/history")
+def list_petition_history(
+    client_name: str | None = None,
+    cpf: str | None = None,
+    benefit_type: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista petições geradas; usuário comum vê as próprias e administrador vê todas."""
+    query = (
+        select(Petition, Document, User.name)
+        .join(Document, Petition.document_id == Document.id)
+        .join(User, Document.user_id == User.id)
+        .where(Petition.deleted_at.is_(None))
+    )
+
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+
+    if client_name and client_name.strip():
+        query = query.where(Petition.content.ilike(f"%{client_name.strip()}%"))
+
+    if cpf and cpf.strip():
+        digits = re.sub(r"\D", "", cpf)
+        if digits:
+            normalized_content = func.replace(
+                func.replace(
+                    func.replace(
+                        func.replace(Petition.content, ".", ""),
+                        "-", "",
+                    ),
+                    " ", "",
+                ),
+                "/", "",
+            )
+            query = query.where(normalized_content.contains(digits))
+
+    if benefit_type and benefit_type.strip():
+        query = query.where(Document.benefit_type == benefit_type.strip())
+
+    if start_date:
+        query = query.where(Petition.generated_at >= start_date)
+    if end_date:
+        query = query.where(Petition.generated_at <= end_date)
+
+    rows = db.execute(query.order_by(Petition.generated_at.desc())).all()
+    history = []
+    for petition, document, owner_name in rows:
+        name_match = re.search(
+            r"QUALIFICAÇÃO\s+(.+?),\s+inscrito\(a\) no CPF",
+            petition.content,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        cpf_match = re.search(
+            r"CPF sob o n[º°o]?\s*([\d.\-]+)",
+            petition.content,
+            flags=re.IGNORECASE,
+        )
+        history.append({
+            "petition_id": petition.id,
+            "document_id": document.id,
+            "client_name": name_match.group(1).strip() if name_match else "Não identificado",
+            "cpf": cpf_match.group(1).rstrip(".-") if cpf_match else None,
+            "benefit_type": document.benefit_type,
+            "generated_at": petition.generated_at,
+            "status": petition.status,
+            "owner_name": owner_name if current_user.role == "ADMINISTRADOR" else None,
+        })
+    return history
+
+
+@router.delete("/history/{petition_id}")
+def delete_petition_from_history(
+    petition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exclusão lógica: mantém o registro e grava auditoria para cumprir rastreabilidade."""
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+
+    petition, document = result
+    petition.deleted_at = datetime.utcnow()
+    db.add(PetitionAuditLog(
+        petition_id=petition.id,
+        user_id=current_user.id,
+        action="EXCLUSAO",
+        details=f"Petição {petition.id} removida do histórico pelo usuário {current_user.id}.",
+    ))
+    db.commit()
+    return {"message": "Petição removida do histórico."}
+
+
+@router.get("/history/{petition_id}")
+def get_petition_history_detail(
+    petition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+    petition, document = result
+    name_match = re.search(
+        r"QUALIFICAÇÃO\s+(.+?),\s+inscrito\(a\) no CPF",
+        petition.content,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return {
+        "petition_id": petition.id,
+        "document_id": document.id,
+        "client_name": name_match.group(1).strip() if name_match else "Não identificado",
+        "benefit_type": document.benefit_type,
+        "generated_at": petition.generated_at,
+        "status": petition.status,
+        "content": petition.content,
+    }
+
+
+@router.get("/history/{petition_id}/versions")
+def get_petition_history_versions(
+    petition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista snapshots já gerados, sem reprocessar o documento."""
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+
+    petition, _document = result
+    snapshots = db.scalars(
+        select(PetitionComposition)
+        .where(PetitionComposition.petition_id == petition.id)
+        .order_by(PetitionComposition.created_at.desc(), PetitionComposition.id.desc())
+    ).all()
+    return [
+        {
+            "version_id": row.id,
+            "created_at": row.created_at,
+            "benefit_type": row.benefit_type,
+            "content": row.content,
+        }
+        for row in snapshots
+    ]
+
+
+@router.get("/history/{petition_id}/versions/{version_id}/export/{file_format}")
+def export_petition_history_version(
+    petition_id: int,
+    version_id: int,
+    file_format: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reexporta um snapshot existente, sem executar novamente a geração."""
+    if file_format not in ("pdf", "docx"):
+        raise HTTPException(status_code=400, detail="Formato inválido. Utilize pdf ou docx.")
+
+    query = (
+        select(Petition, Document)
+        .join(Document, Petition.document_id == Document.id)
+        .where(Petition.id == petition_id, Petition.deleted_at.is_(None))
+    )
+    if current_user.role != "ADMINISTRADOR":
+        query = query.where(Document.user_id == current_user.id)
+    result = db.execute(query).first()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Petição não encontrada.")
+
+    petition, _document = result
+    snapshot = db.scalar(
+        select(PetitionComposition).where(
+            PetitionComposition.id == version_id,
+            PetitionComposition.petition_id == petition.id,
+        )
+    )
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Versão não encontrada.")
+
+    cpf_match = re.search(
+        r"CPF sob o n[º°o]?\s*([\d.\-]+)",
+        snapshot.content,
+        flags=re.IGNORECASE,
+    )
+    if cpf_match is None:
+        raise HTTPException(status_code=422, detail="Não foi possível identificar o CPF da petição.")
+    cpf = re.sub(r"\D", "", cpf_match.group(1))
+    if len(cpf) != 11:
+        raise HTTPException(status_code=422, detail="CPF da petição inválido para exportação.")
+
+    export_date = datetime.now().strftime("%Y%m%d")
+    filename = f"{cpf}_{export_date}_{petition.id:04d}_v{snapshot.id}.{file_format}"
+    if file_format == "docx":
+        content = export_petition_docx(snapshot.content)
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:
+        content = export_petition_pdf(snapshot.content)
+        media_type = "application/pdf"
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

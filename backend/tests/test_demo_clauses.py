@@ -59,7 +59,7 @@ class DemoClauseTests(unittest.TestCase):
         self.current = self.user
         result = self.client.patch(f"/documents/{self.document_id}/benefit",json={"benefit_type":benefit})
         self.assertEqual(result.status_code,200,result.text)
-        response = self.client.post(f"/documents/{self.document_id}/petition",json={"dados_cliente":self.data,"case_details":details})
+        response = self.client.post(f"/documents/{self.document_id}/petition",json={"dados_cliente":self.data,"cidade_peticao":"Caxias do Sul/RS","case_details":details})
         self.assertEqual(response.status_code,200,response.text)
         return response.json()
 
