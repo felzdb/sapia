@@ -74,7 +74,7 @@ export default function ClauseManager({token}: {token: string}) {
                     : draft.benefit_types.filter((value) => value !== benefit),
                 })}
               />
-              <span>{benefit.replace(/_/g, " ")}</span>
+              <span>{benefitLabels[benefit] ?? benefit.replace(/_/g, " ")}</span>
             </label>
           ))}
         </div>
