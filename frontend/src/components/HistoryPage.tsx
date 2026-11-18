@@ -13,6 +13,14 @@ import {
 
 type Props = { token: string; isAdmin: boolean };
 
+function formatDateTimeBrazil(value: string): string {
+  // The API currently returns UTC timestamps without a timezone suffix.
+  // Treat timezone-less values as UTC, then display explicitly in Brasília time.
+  const hasTimezone = /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(value);
+  const date = new Date(hasTimezone ? value : `${value}Z`);
+  return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
 export default function HistoryPage({ token, isAdmin }: Props) {
   const [items, setItems] = useState<PetitionHistoryItem[]>([]);
   const [clientName, setClientName] = useState("");
@@ -112,7 +120,7 @@ export default function HistoryPage({ token, isAdmin }: Props) {
                 <td style={{ padding: 12 }}>{item.client_name}</td>
                 <td style={{ padding: 12 }}>{item.cpf ?? "—"}</td>
                 <td style={{ padding: 12 }}>{item.benefit_type ?? "—"}</td>
-                <td style={{ padding: 12 }}>{new Date(item.generated_at).toLocaleString("pt-BR")}</td>
+                <td style={{ padding: 12 }}>{formatDateTimeBrazil(item.generated_at)}</td>
                 <td style={{ padding: 12 }}>{item.status}</td>
                 {isAdmin && <td style={{ padding: 12 }}>{item.owner_name ?? "—"}</td>}
                 <td style={{ padding: 12, whiteSpace: "nowrap" }}>
@@ -139,7 +147,7 @@ export default function HistoryPage({ token, isAdmin }: Props) {
               <div style={{ display: "grid", gap: 8, marginBottom: 20 }}>
                 {versions.map((version, index) => (
                   <div key={version.version_id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, border: "1px solid #e5e7eb", borderRadius: 8, padding: 12 }}>
-                    <span>Versão {versions.length - index} — {new Date(version.created_at).toLocaleString("pt-BR")}</span>
+                    <span>Versão {versions.length - index} — {formatDateTimeBrazil(version.created_at)}</span>
                     <span>
                       <button onClick={() => setDetail({ ...detail, content: version.content })}>Visualizar versão</button>{" "}
                       <button onClick={() => void exportPetitionHistoryVersion(token, detail.petition_id, version.version_id, "pdf")}>PDF</button>{" "}
