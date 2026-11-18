@@ -38,7 +38,7 @@ export default function ClauseManager({token}: {token: string}) {
   }
   return <section className="workspace-card clause-manager">
     <h2>Banco de cláusulas</h2>
-    <p>Cadastre os textos e as condições de inclusão. Cada edição cria uma nova versão; a exclusão preserva o histórico.</p>
+    <p>Área administrativa do RF8: gerencie cláusulas jurídicas que serão incluídas automaticamente nas petições conforme o benefício e as condições do caso. Cada edição cria uma nova versão; a exclusão preserva o histórico.</p>
     {message && <p role="alert">{message}</p>}
     <form onSubmit={e => {e.preventDefault(); void action(async () => {
       await clauseRequest(token, editing ? `/${editing.id}` : "", editing ? "PUT" : "POST",
