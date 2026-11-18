@@ -1,6 +1,5 @@
 """RF8: cadastro versionado, seleção e composição de cláusulas."""
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from string import Template
 from typing import Literal
 
