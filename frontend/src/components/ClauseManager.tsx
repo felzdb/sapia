@@ -103,7 +103,7 @@ export default function ClauseManager({token}: {token: string}) {
       <button disabled={busy} onClick={() => void action(async () => setHistory(await clauseRequest<Clause[]>(token, `/${c.id}/versions`)))}>Ver versões</button>
     </article>)}
     {history.length > 0 && <section aria-label="Histórico de versões"><h3>Versões de {history[0].title}</h3><button onClick={() => setHistory([])}>Fechar histórico</button>
-      {history.map(v => <article className="clause-record" key={v.version}><h4>Versão {v.version} · {new Date(v.created_at).toLocaleString("pt-BR")}</h4><p>{v.benefit_types.join(", ")} · {JSON.stringify(v.conditions)}</p><pre>{v.text}</pre></article>)}
+      {history.map(v => <article className="clause-record" key={v.version}><h4>Versão {v.version} · {new Date(v.created_at).toLocaleString("pt-BR")}</h4><p>{v.benefit_types.map(benefit => benefitLabels[benefit] ?? benefit.replace(/_/g, " ")).join(", ")} · {JSON.stringify(v.conditions)}</p><pre>{v.text}</pre></article>)}
     </section>}
   </section>;
 }
