@@ -71,7 +71,7 @@ class PetitionHistoryTests(unittest.TestCase):
                 storage_path="outro.pdf",
                 size_bytes=100,
                 status="PROCESSADO",
-                benefit_type="AUXILIO_DOENCA",
+                benefit_type="AUXILIO_INCAPACIDADE_TEMPORARIA",
             )
             db.add_all([document, other_document])
             db.flush()
@@ -167,6 +167,19 @@ class PetitionHistoryTests(unittest.TestCase):
         self.assertEqual(item["cpf"], "529.982.247-25")
         self.assertEqual(item["benefit_type"], "APOSENTADORIA_IDADE")
         self.assertIsNone(item["owner_name"])
+
+    def test_benefit_filter_matches_partial_label_without_accents(self):
+        self.set_user(self.admin_id)
+        response = self.client.get(
+            "/documents/history",
+            params={"benefit_type": "auxilio por incapacidade temporaria"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(
+            response.json()[0]["benefit_type"],
+            "AUXILIO_INCAPACIDADE_TEMPORARIA",
+        )
 
     def test_regular_user_cannot_see_another_users_history_or_detail(self):
         self.set_user(self.other_id)
