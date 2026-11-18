@@ -42,7 +42,7 @@ export default function Sidebar({
                 </button>
 
                 {user.role === "ADMINISTRADOR" && <button className={`nav-item ${view === "clauses" ? "active" : ""}`} onClick={() => onViewChange("clauses")}>
-                    <Scale size={19} /> Banco de cláusulas
+                    <Scale size={19} /> Administração de cláusulas
                 </button>}
             </nav>
 
