@@ -16,7 +16,7 @@ type Props = { token: string; isAdmin: boolean };
 function formatDateTimeBrazil(value: string): string {
   // The API currently returns UTC timestamps without a timezone suffix.
   // Treat timezone-less values as UTC, then display explicitly in Brasília time.
-  const hasTimezone = /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(value);
+  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
   const date = new Date(hasTimezone ? value : `${value}Z`);
   return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
