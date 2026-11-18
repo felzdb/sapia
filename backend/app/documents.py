@@ -6,6 +6,7 @@ from .petition_exporter import export_petition_docx, export_petition_pdf
 
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
@@ -517,7 +518,7 @@ def generate_document_petition(
     else:
         petition.content = content
         petition.status = "GERADA"
-        petition.generated_at = datetime.utcnow()
+        petition.generated_at = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
 
     db.flush()
     db.add(PetitionComposition(petition_id=petition.id, benefit_type=document.benefit_type,
