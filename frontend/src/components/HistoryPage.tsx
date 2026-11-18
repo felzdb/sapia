@@ -13,6 +13,21 @@ import {
 
 type Props = { token: string; isAdmin: boolean };
 
+const benefitLabels: Record<string, string> = {
+  APOSENTADORIA_IDADE: "Aposentadoria por Idade",
+  APOSENTADORIA_TEMPO_CONTRIBUICAO: "Aposentadoria por Tempo de Contribuição",
+  APOSENTADORIA_INCAPACIDADE: "Aposentadoria por Incapacidade Permanente",
+  AUXILIO_INCAPACIDADE_TEMPORARIA: "Auxílio por Incapacidade Temporária",
+  AUXILIO_ACIDENTE: "Auxílio-Acidente",
+  AUXILIO_RECLUSAO: "Auxílio-Reclusão",
+  PENSAO_MORTE: "Pensão por Morte",
+  SALARIO_MATERNIDADE: "Salário-Maternidade",
+  BPC_IDOSO: "BPC - Idoso",
+  BPC_DEFICIENCIA: "BPC - Pessoa com Deficiência",
+  OUTRO: "Outro",
+  NAO_IDENTIFICADO: "Não identificado",
+};
+
 function formatDateTimeBrazil(value: string): string {
   // The backend stores the Brazilian local wall-clock time without a timezone.
   // Display its components as-is to avoid browser timezone shifts.
@@ -80,7 +95,7 @@ export default function HistoryPage({ token, isAdmin }: Props) {
   }
 
   const fieldStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 12px", border: "1px solid #d7dce5",
+    width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #d7dce5",
     borderRadius: 8, background: "#fff", color: "#1f2937",
   };
 
@@ -94,12 +109,12 @@ export default function HistoryPage({ token, isAdmin }: Props) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, margin: "20px 0" }}>
+      <div className="history-filters">
         <input aria-label="Nome do cliente" placeholder="Nome do cliente" value={clientName} onChange={e => setClientName(e.target.value)} style={fieldStyle} />
         <input aria-label="CPF" placeholder="CPF" value={cpf} onChange={e => setCpf(e.target.value)} style={fieldStyle} />
         <input aria-label="Tipo de benefício" placeholder="Tipo de benefício" value={benefitType} onChange={e => setBenefitType(e.target.value)} style={fieldStyle} />
-        <label style={{ fontSize: 12, color: "#5b6474" }}>De<input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={fieldStyle} /></label>
-        <label style={{ fontSize: 12, color: "#5b6474" }}>Até<input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={fieldStyle} /></label>
+        <label className="history-date-filter">De<input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={fieldStyle} /></label>
+        <label className="history-date-filter">Até<input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={fieldStyle} /></label>
         <button className="primary-button" onClick={() => void loadHistory()} disabled={loading}>Pesquisar</button>
       </div>
 
@@ -120,7 +135,7 @@ export default function HistoryPage({ token, isAdmin }: Props) {
               <tr key={item.petition_id} style={{ borderTop: "1px solid #e5e7eb" }}>
                 <td style={{ padding: 12 }}>{item.client_name}</td>
                 <td style={{ padding: 12 }}>{item.cpf ?? "—"}</td>
-                <td style={{ padding: 12 }}>{item.benefit_type ?? "—"}</td>
+                <td style={{ padding: 12 }}>{item.benefit_type ? benefitLabels[item.benefit_type] ?? item.benefit_type.replace(/_/g, " ") : "—"}</td>
                 <td style={{ padding: 12 }}>{formatDateTimeBrazil(item.generated_at)}</td>
                 <td style={{ padding: 12 }}>{item.status}</td>
                 {isAdmin && <td style={{ padding: 12 }}>{item.owner_name ?? "—"}</td>}
