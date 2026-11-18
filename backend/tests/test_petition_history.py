@@ -11,7 +11,7 @@ from app.auth import get_current_user, get_db
 from app.clauses import PetitionComposition
 from app.database import Base
 from app.main import app
-from app.models import Document, Petition, PetitionAuditLog, User
+from app.models import Document, Petition, PetitionAuditLog, User, brazil_local_now
 
 
 PETITION_CONTENT = (
@@ -125,6 +125,14 @@ class PetitionHistoryTests(unittest.TestCase):
     def set_user(self, user_id):
         with self.factory() as db:
             self.current_user = db.get(User, user_id)
+
+    def test_brazil_local_timestamp_helper_and_snapshot_default(self):
+        local_now = brazil_local_now()
+        self.assertIsNone(local_now.tzinfo)
+        self.assertEqual(
+            PetitionComposition.created_at.default.arg,
+            brazil_local_now,
+        )
 
     def test_owner_can_list_own_history_and_filters_work(self):
         response = self.client.get(
