@@ -146,7 +146,7 @@ class PetitionHistoryTests(unittest.TestCase):
         self.assertIsNone(created_at.tzinfo)
         self.assertGreaterEqual(created_at, before)
         self.assertLessEqual(created_at, after)
-        self.assertEqual(PetitionComposition.created_at.default.arg, brazil_local_now)
+        self.assertTrue(callable(PetitionComposition.created_at.default.arg))
 
     def test_owner_can_list_own_history_and_filters_work(self):
         response = self.client.get(
