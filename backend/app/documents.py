@@ -33,7 +33,7 @@ from .schemas import (
     PetitionResponse,
 )
 from .storage import get_upload_directory
-from .benefit_identifier import BENEFIT_TYPES, identify_benefit
+from .benefit_identifier import BENEFIT_TYPES, identify_benefit, normalize_text
 from .gemini_service import analyze_document_text
 from .petition_generator import generate_petition_text
 from .clauses import CaseDetails, PetitionComposition, select_applicable, petition_response
@@ -744,7 +744,7 @@ def list_petition_history(
         benefit_query = benefit_type.strip()
         matching_codes = [
             code for code, label in BENEFIT_LABELS.items()
-            if benefit_query.casefold() in label.casefold()
+            if normalize_text(benefit_query) in normalize_text(label)
         ]
         query = query.where(or_(
             Document.benefit_type.ilike(f"%{benefit_query}%"),
