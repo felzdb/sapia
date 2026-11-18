@@ -4,6 +4,20 @@ import { clauseRequest, type Clause, type ClauseOptions } from "../api";
 type Draft = {title: string; text: string; section: string; benefit_types: string[]; conditions: Record<string, boolean>; display_order: number};
 const empty: Draft = {title: "", text: "", section: "direito", benefit_types: [], conditions: {}, display_order: 0};
 const sectionLabels: Record<string, string> = {fatos: "Dos fatos", direito: "Do direito", pedidos: "Dos pedidos"};
+const benefitLabels: Record<string, string> = {
+  APOSENTADORIA_IDADE: "Aposentadoria por Idade",
+  APOSENTADORIA_TEMPO_CONTRIBUICAO: "Aposentadoria por Tempo de Contribuição",
+  APOSENTADORIA_INCAPACIDADE: "Aposentadoria por Incapacidade Permanente",
+  AUXILIO_INCAPACIDADE_TEMPORARIA: "Auxílio por Incapacidade Temporária",
+  AUXILIO_ACIDENTE: "Auxílio-Acidente",
+  AUXILIO_RECLUSAO: "Auxílio-Reclusão",
+  PENSAO_MORTE: "Pensão por Morte",
+  SALARIO_MATERNIDADE: "Salário-Maternidade",
+  BPC_IDOSO: "BPC - Idoso",
+  BPC_DEFICIENCIA: "BPC - Pessoa com Deficiência",
+  OUTRO: "Outro",
+  NAO_IDENTIFICADO: "Não identificado",
+};
 export default function ClauseManager({token}: {token: string}) {
   const [clauses, setClauses] = useState<Clause[]>([]);
   const [options, setOptions] = useState<ClauseOptions | null>(null);
@@ -81,7 +95,7 @@ export default function ClauseManager({token}: {token: string}) {
     {!clauses.length && <p>Nenhuma cláusula cadastrada. Adicione os textos antes de gerar uma petição.</p>}
     {clauses.map(c => <article className="clause-record" key={c.id}>
       <h4>{c.title} · v{c.version} {c.active ? "" : "· Excluída"}</h4>
-      <p>{sectionLabels[c.section]} · Ordem {c.display_order} · {c.benefit_types.join(", ")}</p>
+      <p>{sectionLabels[c.section]} · Ordem {c.display_order} · {c.benefit_types.map(benefit => benefitLabels[benefit] ?? benefit.replace(/_/g, " ")).join(", ")}</p>
       <p>{Object.entries(c.conditions).map(([k,v]) => `${options?.case_fields[k] ?? k}: ${v ? "sim" : "não"}`).join("; ") || "Sem condições adicionais"}</p>
       <pre>{c.text}</pre>
       {c.active && <><button disabled={busy} onClick={() => {setEditing(c); setDraft({title:c.title,text:c.text,section:c.section,benefit_types:c.benefit_types,conditions:c.conditions,display_order:c.display_order}); setHistory([]);}}>Editar</button>
