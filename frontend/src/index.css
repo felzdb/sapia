@@ -1207,3 +1207,25 @@ input:focus {
     width: 100%;
   }
 }
+
+
+/* Histórico: alinhamento consistente dos filtros, incluindo campos de data. */
+.history-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: end;
+  gap: 12px;
+  margin: 20px 0;
+}
+.history-date-filter {
+  display: grid;
+  align-content: end;
+  gap: 6px;
+  min-width: 0;
+  color: #5b6474;
+  font-size: 12px;
+}
+.history-date-filter input {
+  min-width: 0;
+  height: 40px;
+}
