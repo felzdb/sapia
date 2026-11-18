@@ -126,13 +126,27 @@ class PetitionHistoryTests(unittest.TestCase):
         with self.factory() as db:
             self.current_user = db.get(User, user_id)
 
-    def test_brazil_local_timestamp_helper_and_snapshot_default(self):
-        local_now = brazil_local_now()
-        self.assertIsNone(local_now.tzinfo)
-        self.assertEqual(
-            PetitionComposition.created_at.default.arg,
-            brazil_local_now,
+    def test_snapshot_default_timestamp_uses_brazil_local_time(self):
+        before = brazil_local_now()
+        snapshot = PetitionComposition(
+            petition_id=self.petition_id,
+            benefit_type="APOSENTADORIA_IDADE",
+            case_details={},
+            clauses=[],
+            warnings=[],
+            content="Teste de horário local.",
         )
+        with self.factory() as db:
+            db.add(snapshot)
+            db.flush()
+            created_at = snapshot.created_at
+            db.rollback()
+        after = brazil_local_now()
+
+        self.assertIsNone(created_at.tzinfo)
+        self.assertGreaterEqual(created_at, before)
+        self.assertLessEqual(created_at, after)
+        self.assertEqual(PetitionComposition.created_at.default.arg, brazil_local_now)
 
     def test_owner_can_list_own_history_and_filters_work(self):
         response = self.client.get(
