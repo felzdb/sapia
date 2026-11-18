@@ -14,11 +14,12 @@ import {
 type Props = { token: string; isAdmin: boolean };
 
 function formatDateTimeBrazil(value: string): string {
-  // The API currently returns UTC timestamps without a timezone suffix.
-  // Treat timezone-less values as UTC, then display explicitly in Brasília time.
-  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
-  const date = new Date(hasTimezone ? value : `${value}Z`);
-  return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  // The backend stores the Brazilian local wall-clock time without a timezone.
+  // Display its components as-is to avoid browser timezone shifts.
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return value;
+  const [, year, month, day, hour, minute, second = "00"] = match;
+  return `${day}/${month}/${year}, ${hour}:${minute}:${second}`;
 }
 
 export default function HistoryPage({ token, isAdmin }: Props) {
