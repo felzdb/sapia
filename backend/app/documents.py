@@ -18,7 +18,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user, get_db
@@ -39,6 +39,21 @@ from .petition_generator import generate_petition_text
 from .clauses import CaseDetails, PetitionComposition, select_applicable, petition_response
 from pydantic import ValidationError
 
+
+BENEFIT_LABELS = {
+    "APOSENTADORIA_IDADE": "Aposentadoria por Idade",
+    "APOSENTADORIA_TEMPO_CONTRIBUICAO": "Aposentadoria por Tempo de Contribuição",
+    "APOSENTADORIA_INCAPACIDADE": "Aposentadoria por Incapacidade Permanente",
+    "AUXILIO_INCAPACIDADE_TEMPORARIA": "Auxílio por Incapacidade Temporária",
+    "AUXILIO_ACIDENTE": "Auxílio-Acidente",
+    "AUXILIO_RECLUSAO": "Auxílio-Reclusão",
+    "PENSAO_MORTE": "Pensão por Morte",
+    "SALARIO_MATERNIDADE": "Salário-Maternidade",
+    "BPC_IDOSO": "BPC - Idoso",
+    "BPC_DEFICIENCIA": "BPC - Pessoa com Deficiência",
+    "OUTRO": "Outro",
+    "NAO_IDENTIFICADO": "Não identificado",
+}
 
 router = APIRouter(
     prefix="/documents",
@@ -726,7 +741,15 @@ def list_petition_history(
             query = query.where(normalized_content.contains(digits))
 
     if benefit_type and benefit_type.strip():
-        query = query.where(Document.benefit_type == benefit_type.strip())
+        benefit_query = benefit_type.strip()
+        matching_codes = [
+            code for code, label in BENEFIT_LABELS.items()
+            if benefit_query.casefold() in label.casefold()
+        ]
+        query = query.where(or_(
+            Document.benefit_type.ilike(f"%{benefit_query}%"),
+            Document.benefit_type.in_(matching_codes),
+        ))
 
     if start_date:
         query = query.where(Petition.generated_at >= start_date)
