@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/rf10-historico-documentos-atualizado
+      - fix/rf10-horario-brasilia
   pull_request:
     branches:
       - main

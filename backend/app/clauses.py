@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 from .auth import get_current_user, get_db
 from .benefit_identifier import BENEFIT_TYPES
 from .database import Base
-from .models import User, Petition
+from .models import User, Petition, brazil_local_now
 from .schemas import ClientDataResponse
 
 CASE_FIELDS = {
@@ -57,7 +57,7 @@ class PetitionComposition(Base):
     clauses: Mapped[list] = mapped_column(JSON)
     warnings: Mapped[list] = mapped_column(JSON)
     content: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=brazil_local_now)
 
 
 class ClauseContent(BaseModel):

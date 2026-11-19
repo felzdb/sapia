@@ -1,4 +1,9 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+
+def brazil_local_now() -> datetime:
+    return datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -144,7 +149,7 @@ class Petition(Base):
 
     generated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=brazil_local_now,
         nullable=False,
     )
 

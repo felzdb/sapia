@@ -11,7 +11,7 @@ from app.auth import get_current_user, get_db
 from app.clauses import PetitionComposition
 from app.database import Base
 from app.main import app
-from app.models import Document, Petition, PetitionAuditLog, User
+from app.models import Document, Petition, PetitionAuditLog, User, brazil_local_now
 
 
 PETITION_CONTENT = (
@@ -71,7 +71,7 @@ class PetitionHistoryTests(unittest.TestCase):
                 storage_path="outro.pdf",
                 size_bytes=100,
                 status="PROCESSADO",
-                benefit_type="AUXILIO_DOENCA",
+                benefit_type="AUXILIO_INCAPACIDADE_TEMPORARIA",
             )
             db.add_all([document, other_document])
             db.flush()
@@ -126,6 +126,28 @@ class PetitionHistoryTests(unittest.TestCase):
         with self.factory() as db:
             self.current_user = db.get(User, user_id)
 
+    def test_snapshot_default_timestamp_uses_brazil_local_time(self):
+        before = brazil_local_now()
+        snapshot = PetitionComposition(
+            petition_id=self.petition_id,
+            benefit_type="APOSENTADORIA_IDADE",
+            case_details={},
+            clauses=[],
+            warnings=[],
+            content="Teste de horário local.",
+        )
+        with self.factory() as db:
+            db.add(snapshot)
+            db.flush()
+            created_at = snapshot.created_at
+            db.rollback()
+        after = brazil_local_now()
+
+        self.assertIsNone(created_at.tzinfo)
+        self.assertGreaterEqual(created_at, before)
+        self.assertLessEqual(created_at, after)
+        self.assertTrue(callable(PetitionComposition.created_at.default.arg))
+
     def test_owner_can_list_own_history_and_filters_work(self):
         response = self.client.get(
             "/documents/history",
@@ -145,6 +167,19 @@ class PetitionHistoryTests(unittest.TestCase):
         self.assertEqual(item["cpf"], "529.982.247-25")
         self.assertEqual(item["benefit_type"], "APOSENTADORIA_IDADE")
         self.assertIsNone(item["owner_name"])
+
+    def test_benefit_filter_matches_partial_label_without_accents(self):
+        self.set_user(self.admin_id)
+        response = self.client.get(
+            "/documents/history",
+            params={"benefit_type": "auxilio por incapacidade temporaria"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(
+            response.json()[0]["benefit_type"],
+            "AUXILIO_INCAPACIDADE_TEMPORARIA",
+        )
 
     def test_regular_user_cannot_see_another_users_history_or_detail(self):
         self.set_user(self.other_id)

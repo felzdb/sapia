@@ -40,10 +40,6 @@ export default function Sidebar({
                     <History size={19} />
                     Histórico
                 </button>
-
-                {user.role === "ADMINISTRADOR" && <button className={`nav-item ${view === "clauses" ? "active" : ""}`} onClick={() => onViewChange("clauses")}>
-                    <Scale size={19} /> Banco de cláusulas
-                </button>}
             </nav>
 
             <div className="sidebar-bottom">

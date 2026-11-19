@@ -4,6 +4,20 @@ import { clauseRequest, type Clause, type ClauseOptions } from "../api";
 type Draft = {title: string; text: string; section: string; benefit_types: string[]; conditions: Record<string, boolean>; display_order: number};
 const empty: Draft = {title: "", text: "", section: "direito", benefit_types: [], conditions: {}, display_order: 0};
 const sectionLabels: Record<string, string> = {fatos: "Dos fatos", direito: "Do direito", pedidos: "Dos pedidos"};
+const benefitLabels: Record<string, string> = {
+  APOSENTADORIA_IDADE: "Aposentadoria por Idade",
+  APOSENTADORIA_TEMPO_CONTRIBUICAO: "Aposentadoria por Tempo de Contribuição",
+  APOSENTADORIA_INCAPACIDADE: "Aposentadoria por Incapacidade Permanente",
+  AUXILIO_INCAPACIDADE_TEMPORARIA: "Auxílio por Incapacidade Temporária",
+  AUXILIO_ACIDENTE: "Auxílio-Acidente",
+  AUXILIO_RECLUSAO: "Auxílio-Reclusão",
+  PENSAO_MORTE: "Pensão por Morte",
+  SALARIO_MATERNIDADE: "Salário-Maternidade",
+  BPC_IDOSO: "BPC - Idoso",
+  BPC_DEFICIENCIA: "BPC - Pessoa com Deficiência",
+  OUTRO: "Outro",
+  NAO_IDENTIFICADO: "Não identificado",
+};
 export default function ClauseManager({token}: {token: string}) {
   const [clauses, setClauses] = useState<Clause[]>([]);
   const [options, setOptions] = useState<ClauseOptions | null>(null);
@@ -24,7 +38,7 @@ export default function ClauseManager({token}: {token: string}) {
   }
   return <section className="workspace-card clause-manager">
     <h2>Banco de cláusulas</h2>
-    <p>Cadastre os textos e as condições de inclusão. Cada edição cria uma nova versão; a exclusão preserva o histórico.</p>
+    <p>Área administrativa do RF8: gerencie cláusulas jurídicas que serão incluídas automaticamente nas petições conforme o benefício e as condições do caso. Cada edição cria uma nova versão; a exclusão preserva o histórico.</p>
     {message && <p role="alert">{message}</p>}
     <form onSubmit={e => {e.preventDefault(); void action(async () => {
       await clauseRequest(token, editing ? `/${editing.id}` : "", editing ? "PUT" : "POST",
@@ -60,7 +74,7 @@ export default function ClauseManager({token}: {token: string}) {
                     : draft.benefit_types.filter((value) => value !== benefit),
                 })}
               />
-              <span>{benefit.replace(/_/g, " ")}</span>
+              <span>{benefitLabels[benefit] ?? benefit.replace(/_/g, " ")}</span>
             </label>
           ))}
         </div>
@@ -81,7 +95,7 @@ export default function ClauseManager({token}: {token: string}) {
     {!clauses.length && <p>Nenhuma cláusula cadastrada. Adicione os textos antes de gerar uma petição.</p>}
     {clauses.map(c => <article className="clause-record" key={c.id}>
       <h4>{c.title} · v{c.version} {c.active ? "" : "· Excluída"}</h4>
-      <p>{sectionLabels[c.section]} · Ordem {c.display_order} · {c.benefit_types.join(", ")}</p>
+      <p>{sectionLabels[c.section]} · Ordem {c.display_order} · {c.benefit_types.map(benefit => benefitLabels[benefit] ?? benefit.replace(/_/g, " ")).join(", ")}</p>
       <p>{Object.entries(c.conditions).map(([k,v]) => `${options?.case_fields[k] ?? k}: ${v ? "sim" : "não"}`).join("; ") || "Sem condições adicionais"}</p>
       <pre>{c.text}</pre>
       {c.active && <><button disabled={busy} onClick={() => {setEditing(c); setDraft({title:c.title,text:c.text,section:c.section,benefit_types:c.benefit_types,conditions:c.conditions,display_order:c.display_order}); setHistory([]);}}>Editar</button>
@@ -89,7 +103,7 @@ export default function ClauseManager({token}: {token: string}) {
       <button disabled={busy} onClick={() => void action(async () => setHistory(await clauseRequest<Clause[]>(token, `/${c.id}/versions`)))}>Ver versões</button>
     </article>)}
     {history.length > 0 && <section aria-label="Histórico de versões"><h3>Versões de {history[0].title}</h3><button onClick={() => setHistory([])}>Fechar histórico</button>
-      {history.map(v => <article className="clause-record" key={v.version}><h4>Versão {v.version} · {new Date(v.created_at).toLocaleString("pt-BR")}</h4><p>{v.benefit_types.join(", ")} · {JSON.stringify(v.conditions)}</p><pre>{v.text}</pre></article>)}
+      {history.map(v => <article className="clause-record" key={v.version}><h4>Versão {v.version} · {new Date(v.created_at).toLocaleString("pt-BR")}</h4><p>{v.benefit_types.map(benefit => benefitLabels[benefit] ?? benefit.replace(/_/g, " ")).join(", ")} · {JSON.stringify(v.conditions)}</p><pre>{v.text}</pre></article>)}
     </section>}
   </section>;
 }
